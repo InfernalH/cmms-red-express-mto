@@ -1,0 +1,39 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "store_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "criticality", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "maintenance_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "store_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "reported_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "maintenance_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "asset_id", "order": "ASCENDING" },
+        { "fieldPath": "reported_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "preventive_executions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "asset_id", "order": "ASCENDING" },
+        { "fieldPath": "executed_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,17 @@
+{
+  "name": "CMMS Red 528 Locales - Gestión de Mantenimiento HVAC",
+  "short_name": "CMMS 528",
+  "description": "Sistema GMAO / CMMS Offline-First para Técnicos y Encargados de Local (528 Sucursales Argentina)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1d4ed8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

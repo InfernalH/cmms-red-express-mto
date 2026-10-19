@@ -1,0 +1,625 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model - CMMS / GMAO (Red de 528 Locales Argentina)
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: zones
+// Document ID: {zoneId}
+// Fields:
+//   - id: int | string (optional, immutable) - Zone identifier
+//   - name: string (required, 1..100 chars) - Zone descriptive name
+//   - region: string (required, enum: 'CABA' | 'GBA' | 'Interior') - Geographical region
+//   - supervisor_user_id: int | string | null (optional) - Assigned supervisor user ID
+//   - created_at: timestamp | string (required, immutable) - Creation timestamp
+//
+// Collection: stores
+// Document ID: {storeId}
+// Fields:
+//   - id: int | string (optional, immutable) - Store identifier
+//   - code: string (required, 1..30 chars, immutable) - Unique store code (e.g., LOC-001)
+//   - name: string (required, 1..150 chars) - Store name
+//   - zone_id: int | string (required) - Reference to zones
+//   - address: string (required, 1..255 chars) - Street address
+//   - city: string (required, 1..100 chars) - City name
+//   - province: string (required, 1..100 chars) - Province name
+//   - is_active: bool (required) - Operational status
+//   - latitude: number (optional, -90..90) - Geolocation latitude
+//   - longitude: number (optional, -180..180) - Geolocation longitude
+//   - surface_sqm: number (optional, > 0) - Store surface area in square meters
+//   - phone: string (optional, 1..50 chars) - Store contact phone
+//   - created_at: timestamp | string (optional, immutable) - Creation timestamp
+//
+// Collection: users
+// Document ID: {userId}
+// Fields:
+//   - id: int | string (optional, immutable) - User identifier
+//   - full_name: string (required, 1..150 chars) - Full legal name
+//   - email: string (required, valid email format, <= 150 chars, immutable) - Corporate email (PII)
+//   - role: string (required, enum: 'admin' | 'jefe_mantenimiento' | 'tecnico' | 'encargado_local')
+//   - is_active: bool (required) - Whether account is enabled
+//   - phone: string (optional, 1..50 chars) - Contact phone (PII)
+//   - company_name: string (optional, 1..100 chars) - Employer or contractor company
+//   - assigned_store_ids: list (optional, <= 600 items) - Store IDs assigned to user
+//   - created_at: timestamp | string (optional, immutable) - Creation timestamp
+//
+// Collection: asset_categories
+// Document ID: {categoryId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - code: string (required, enum: 'HVAC' | 'REFRIG')
+//   - name: string (required, 1..100 chars)
+//
+// Collection: asset_types
+// Document ID: {typeId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - category_id: int | string (required)
+//   - name: string (required, 1..100 chars)
+//
+// Collection: assets
+// Document ID: {assetId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - store_id: int | string (required, immutable) - Store reference
+//   - asset_type_id: int | string (required, immutable) - Asset type reference
+//   - tag_code: string (required, 1..50 chars, immutable) - Asset tag code
+//   - qr_code_uuid: string (required, 1..64 chars, immutable) - Unique QR UUID
+//   - brand: string (required, 1..100 chars) - Equipment manufacturer
+//   - model: string (required, 1..100 chars) - Equipment model
+//   - criticality: string (required, enum: 'baja' | 'media' | 'alta' | 'critica')
+//   - status: string (required, enum: 'operativo' | 'con_falla' | 'en_reparacion' | 'baja')
+//   - technical_specs: map (required, <= 50 keys) - Dynamic specifications map
+//   - serial_number: string (optional, 1..100 chars)
+//   - location_in_store: string (optional, 1..100 chars)
+//   - capacity_kcal_fg: number (optional, >= 0)
+//   - refrigerant_type: string (optional, 1..30 chars)
+//   - power_supply: string (optional, 1..30 chars)
+//   - is_inverter: bool (optional)
+//   - installation_date: timestamp | string (optional, immutable)
+//   - warranty_expiration: timestamp | string (optional)
+//   - photo_url: string (optional, <= 2048 chars)
+//   - created_at: timestamp | string (optional, immutable)
+//   - updated_at: timestamp | string (optional)
+//
+// Collection: maintenance_requests
+// Document ID: {requestId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - ticket_number: string (required, 1..30 chars, immutable)
+//   - store_id: int | string (required, immutable)
+//   - asset_id: int | string | null (required)
+//   - failure_symptom: string (required, 1..100 chars)
+//   - priority: string (required, enum: 'baja' | 'media' | 'alta' | 'critica')
+//   - status: string (required, enum: 'abierto' | 'asignado' | 'en_visita' | 'resuelto' | 'cancelado')
+//   - reported_at: timestamp | string (required, immutable)
+//   - created_by_user_id: int | string | null (optional, immutable)
+//   - description: string | null (optional, <= 2000 chars)
+//   - photo_evidence_url: string | null (optional, <= 2048 chars)
+//   - assigned_technician_id: int | string | null (optional)
+//   - attended_at: timestamp | string | null (optional)
+//   - resolved_at: timestamp | string | null (optional)
+//   - resolution_comment: string | null (optional, <= 2000 chars)
+//   - closing_photo_url: string | null (optional, <= 2048 chars)
+//   - sync_offline_id: string | null (optional, <= 100 chars)
+//
+// Collection: maintenance_plans
+// Document ID: {planId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - name: string (required, 1..150 chars)
+//   - asset_type_id: int | string (required)
+//   - frequency_days: int | number (required, > 0)
+//   - is_active: bool (required)
+//
+// Collection: plan_checklist_items
+// Document ID: {itemId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - plan_id: int | string (required)
+//   - step_order: int | number (required, > 0)
+//   - task_description: string (required, 1..255 chars)
+//   - input_type: string (required, enum: 'check' | 'number' | 'photo')
+//   - unit: string | null (optional, <= 20 chars)
+//
+// Collection: preventive_executions
+// Document ID: {executionId}
+// Fields:
+//   - id: int | string (optional, immutable)
+//   - plan_id: int | string (required, immutable)
+//   - asset_id: int | string (required, immutable)
+//   - results: map (required, 1..100 keys)
+//   - signature_url: string (required, 1..2048 chars)
+//   - sync_offline_id: string (required, 1..100 chars, immutable)
+//   - technician_id: int | string | null (optional, immutable)
+//   - executed_at: timestamp | string (optional, immutable)
+//   - observations: string | null (optional, <= 2000 chars)
+//
+// Phase 2 Latent Collections (work_orders, warehouses, spare_parts, work_order_parts_used, iot_telemetry):
+//   - Read restricted to admin / jefe_mantenimiento; all client writes denied in Phase 1.
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user owns the resource (for user-owned documents)
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is owner based on document's uid field
+    function isDocOwner() {
+      return isAuthenticated() && ('uid' in resource.data) && request.auth.uid == resource.data.uid;
+    }
+
+    // Verify UID hasn't been tampered with on create
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    // Ensure uid field is not modified on update
+    function uidNotModified() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == resource.data.uid;
+    }
+
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that the document contains only the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate that immutable fields have not been modified during an update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Validate string length on request.resource.data
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    // Validate optional string (if present and non-null, must be string within length bounds)
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        request.resource.data[field] == null ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() >= 5 &&
+        email.size() <= 150 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate URL format (must start with https:// or http://)
+    function isValidUrl(url) {
+      return url is string &&
+        url.size() <= 2048 &&
+        (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // Validate ID field (supports positive integer or bounded non-empty string)
+    function isValidId(val) {
+      return (val is int && val > 0) ||
+        (val is string && val.size() >= 1 && val.size() <= 100);
+    }
+
+    // Validate optional ID field (allows absence or null)
+    function isValidOptionalId(data, field) {
+      return !(field in data) ||
+        data[field] == null ||
+        isValidId(data[field]);
+    }
+
+    // Validate timestamp or ISO-8601 date/datetime string
+    function isValidTimestampOrDateString(val) {
+      return val is timestamp ||
+        (val is string &&
+         val.size() >= 10 &&
+         val.size() <= 40 &&
+         val.matches("^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}.*)?$"));
+    }
+
+    // Validate optional timestamp or ISO-8601 date string
+    function isValidOptionalTimestampOrDate(data, field) {
+      return !(field in data) ||
+        data[field] == null ||
+        isValidTimestampOrDateString(data[field]);
+    }
+
+    // Validate bounded list size
+    function isValidList(listVal, maxSize) {
+      return listVal is list && listVal.size() <= maxSize;
+    }
+
+    // ===============================================================
+    // Role-Based Access Control (RBAC) Helpers
+    // ===============================================================
+
+    // Retrieve user's role from custom claims first, falling back to /users/{uid} document
+    function getUserRole() {
+      return !isAuthenticated()
+        ? ''
+        : (
+            ('role' in request.auth.token && request.auth.token.role is string)
+              ? request.auth.token.role
+              : (
+                  exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_active == true
+                    ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+                    : ''
+                )
+          );
+    }
+
+    function hasRole(roleName) {
+      return isAuthenticated() && getUserRole() == roleName;
+    }
+
+    function hasAnyRole(roles) {
+      return isAuthenticated() && (getUserRole() in roles);
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isJefeMantenimiento() {
+      return hasRole('jefe_mantenimiento');
+    }
+
+    function isTecnico() {
+      return hasRole('tecnico');
+    }
+
+    function isEncargadoLocal() {
+      return hasRole('encargado_local');
+    }
+
+    function isAdminOrManager() {
+      return hasAnyRole(['admin', 'jefe_mantenimiento']);
+    }
+
+    // ===============================================================
+    // Domain Validators (Called on BOTH create and update)
+    // ===============================================================
+
+    function isValidZone(data) {
+      return hasRequiredFields(['name', 'region', 'created_at']) &&
+        hasOnlyAllowedFields(['id', 'name', 'region', 'supervisor_user_id', 'created_at']) &&
+        isValidOptionalId(data, 'id') &&
+        validStringLength('name', 1, 100) &&
+        (data.region in ['CABA', 'GBA', 'Interior']) &&
+        isValidOptionalId(data, 'supervisor_user_id') &&
+        isValidTimestampOrDateString(data.created_at);
+    }
+
+    function isValidStore(data) {
+      return hasRequiredFields(['code', 'name', 'zone_id', 'address', 'city', 'province', 'is_active']) &&
+        hasOnlyAllowedFields([
+          'id', 'code', 'name', 'zone_id', 'address', 'city', 'province',
+          'latitude', 'longitude', 'surface_sqm', 'phone', 'is_active', 'created_at'
+        ]) &&
+        isValidOptionalId(data, 'id') &&
+        validStringLength('code', 1, 30) &&
+        validStringLength('name', 1, 150) &&
+        isValidId(data.zone_id) &&
+        validStringLength('address', 1, 255) &&
+        validStringLength('city', 1, 100) &&
+        validStringLength('province', 1, 100) &&
+        data.is_active is bool &&
+        (!('latitude' in data) || data.latitude == null || (data.latitude is number && data.latitude >= -90 && data.latitude <= 90)) &&
+        (!('longitude' in data) || data.longitude == null || (data.longitude is number && data.longitude >= -180 && data.longitude <= 180)) &&
+        (!('surface_sqm' in data) || data.surface_sqm == null || (data.surface_sqm is number && data.surface_sqm > 0 && data.surface_sqm <= 100000)) &&
+        isValidOptionalString('phone', 1, 50) &&
+        isValidOptionalTimestampOrDate(data, 'created_at');
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(['full_name', 'email', 'role', 'is_active']) &&
+        hasOnlyAllowedFields([
+          'id', 'full_name', 'email', 'phone', 'role',
+          'company_name', 'is_active', 'assigned_store_ids', 'created_at'
+        ]) &&
+        isValidOptionalId(data, 'id') &&
+        validStringLength('full_name', 1, 150) &&
+        isValidEmail(data.email) &&
+        (data.role in ['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']) &&
+        data.is_active is bool &&
+        isValidOptionalString('phone', 1, 50) &&
+        isValidOptionalString('company_name', 1, 100) &&
+        (!('assigned_store_ids' in data) || isValidList(data.assigned_store_ids, 600)) &&
+        isValidOptionalTimestampOrDate(data, 'created_at');
+    }
+
+    function isValidAssetCategory(data) {
+      return hasRequiredFields(['code', 'name']) &&
+        hasOnlyAllowedFields(['id', 'code', 'name']) &&
+        isValidOptionalId(data, 'id') &&
+        (data.code in ['HVAC', 'REFRIG']) &&
+        validStringLength('name', 1, 100);
+    }
+
+    function isValidAssetType(data) {
+      return hasRequiredFields(['category_id', 'name']) &&
+        hasOnlyAllowedFields(['id', 'category_id', 'name']) &&
+        isValidOptionalId(data, 'id') &&
+        isValidId(data.category_id) &&
+        validStringLength('name', 1, 100);
+    }
+
+    function isValidAsset(data) {
+      return hasRequiredFields([
+          'store_id', 'asset_type_id', 'tag_code', 'qr_code_uuid',
+          'brand', 'model', 'criticality', 'status', 'technical_specs'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'store_id', 'asset_type_id', 'tag_code', 'qr_code_uuid',
+          'brand', 'model', 'serial_number', 'location_in_store',
+          'criticality', 'status', 'capacity_kcal_fg', 'refrigerant_type',
+          'power_supply', 'is_inverter', 'installation_date',
+          'warranty_expiration', 'technical_specs', 'photo_url',
+          'created_at', 'updated_at'
+        ]) &&
+        isValidOptionalId(data, 'id') &&
+        isValidId(data.store_id) &&
+        isValidId(data.asset_type_id) &&
+        validStringLength('tag_code', 1, 50) &&
+        validStringLength('qr_code_uuid', 1, 64) &&
+        validStringLength('brand', 1, 100) &&
+        validStringLength('model', 1, 100) &&
+        (data.criticality in ['baja', 'media', 'alta', 'critica']) &&
+        (data.status in ['operativo', 'con_falla', 'en_reparacion', 'baja']) &&
+        data.technical_specs is map &&
+        data.technical_specs.size() <= 50 &&
+        isValidOptionalString('serial_number', 1, 100) &&
+        isValidOptionalString('location_in_store', 1, 100) &&
+        (!('capacity_kcal_fg' in data) || data.capacity_kcal_fg == null || (data.capacity_kcal_fg is number && data.capacity_kcal_fg >= 0 && data.capacity_kcal_fg <= 1000000)) &&
+        isValidOptionalString('refrigerant_type', 1, 30) &&
+        isValidOptionalString('power_supply', 1, 30) &&
+        (!('is_inverter' in data) || data.is_inverter is bool) &&
+        isValidOptionalTimestampOrDate(data, 'installation_date') &&
+        isValidOptionalTimestampOrDate(data, 'warranty_expiration') &&
+        isValidOptionalString('photo_url', 1, 2048) &&
+        isValidOptionalTimestampOrDate(data, 'created_at') &&
+        isValidOptionalTimestampOrDate(data, 'updated_at');
+    }
+
+    function isValidMaintenanceRequest(data) {
+      return hasRequiredFields([
+          'ticket_number', 'store_id', 'asset_id', 'failure_symptom',
+          'priority', 'status', 'reported_at'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'ticket_number', 'store_id', 'asset_id', 'created_by_user_id',
+          'failure_symptom', 'priority', 'description', 'photo_evidence_url',
+          'status', 'assigned_technician_id', 'reported_at', 'attended_at',
+          'resolved_at', 'resolution_comment', 'closing_photo_url', 'sync_offline_id'
+        ]) &&
+        isValidOptionalId(data, 'id') &&
+        validStringLength('ticket_number', 1, 30) &&
+        isValidId(data.store_id) &&
+        (data.asset_id == null || isValidId(data.asset_id)) &&
+        isValidOptionalId(data, 'created_by_user_id') &&
+        validStringLength('failure_symptom', 1, 100) &&
+        (data.priority in ['baja', 'media', 'alta', 'critica']) &&
+        (data.status in ['abierto', 'asignado', 'en_visita', 'resuelto', 'cancelado']) &&
+        isValidTimestampOrDateString(data.reported_at) &&
+        isValidOptionalString('description', 0, 2000) &&
+        isValidOptionalString('photo_evidence_url', 1, 2048) &&
+        isValidOptionalId(data, 'assigned_technician_id') &&
+        isValidOptionalTimestampOrDate(data, 'attended_at') &&
+        isValidOptionalTimestampOrDate(data, 'resolved_at') &&
+        isValidOptionalString('resolution_comment', 0, 2000) &&
+        isValidOptionalString('closing_photo_url', 1, 2048) &&
+        isValidOptionalString('sync_offline_id', 1, 100);
+    }
+
+    function isValidMaintenancePlan(data) {
+      return hasRequiredFields(['name', 'asset_type_id', 'frequency_days', 'is_active']) &&
+        hasOnlyAllowedFields(['id', 'name', 'asset_type_id', 'frequency_days', 'is_active']) &&
+        isValidOptionalId(data, 'id') &&
+        validStringLength('name', 1, 150) &&
+        isValidId(data.asset_type_id) &&
+        data.frequency_days is number &&
+        data.frequency_days > 0 &&
+        data.frequency_days <= 3650 &&
+        data.is_active is bool;
+    }
+
+    function isValidPlanChecklistItem(data) {
+      return hasRequiredFields(['plan_id', 'step_order', 'task_description', 'input_type']) &&
+        hasOnlyAllowedFields(['id', 'plan_id', 'step_order', 'task_description', 'input_type', 'unit']) &&
+        isValidOptionalId(data, 'id') &&
+        isValidId(data.plan_id) &&
+        data.step_order is number &&
+        data.step_order > 0 &&
+        data.step_order <= 500 &&
+        validStringLength('task_description', 1, 255) &&
+        (data.input_type in ['check', 'number', 'photo']) &&
+        isValidOptionalString('unit', 1, 20);
+    }
+
+    function isValidPreventiveExecution(data) {
+      return hasRequiredFields(['plan_id', 'asset_id', 'results', 'signature_url', 'sync_offline_id']) &&
+        hasOnlyAllowedFields([
+          'id', 'plan_id', 'asset_id', 'technician_id', 'executed_at',
+          'results', 'observations', 'signature_url', 'sync_offline_id'
+        ]) &&
+        isValidOptionalId(data, 'id') &&
+        isValidId(data.plan_id) &&
+        isValidId(data.asset_id) &&
+        isValidOptionalId(data, 'technician_id') &&
+        isValidOptionalTimestampOrDate(data, 'executed_at') &&
+        data.results is map &&
+        data.results.size() >= 1 &&
+        data.results.size() <= 100 &&
+        isValidOptionalString('observations', 0, 2000) &&
+        validStringLength('signature_url', 1, 2048) &&
+        validStringLength('sync_offline_id', 1, 100);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. ZONES
+    match /zones/{zoneId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidZone(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidZone(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'created_at']);
+      allow delete: if isAdmin();
+    }
+
+    // 2. STORES (528 retail stores across Argentina)
+    match /stores/{storeId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidStore(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidStore(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'code', 'created_at']);
+      allow delete: if isAdmin();
+    }
+
+    // 3. USERS (Contains PII: email, phone - strictly restricted to owner or admin/manager)
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow create: if isAdmin() && isValidUser(request.resource.data);
+      allow update: if isValidUser(request.resource.data) && (
+        isAdmin() ||
+        (isOwner(userId) && areImmutableFieldsUnchanged(['id', 'email', 'role', 'is_active', 'assigned_store_ids', 'created_at']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 4. ASSET CATEGORIES & ASSET TYPES (Catalog collections)
+    match /asset_categories/{categoryId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidAssetCategory(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidAssetCategory(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'code']);
+      allow delete: if isAdmin();
+    }
+
+    match /asset_types/{typeId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidAssetType(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidAssetType(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id']);
+      allow delete: if isAdmin();
+    }
+
+    // 5. ASSETS (HVAC & Refrigeration inventory with QR UUID)
+    match /assets/{assetId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidAsset(request.resource.data);
+      allow update: if isValidAsset(request.resource.data) && (
+        (isAdminOrManager() && areImmutableFieldsUnchanged(['id', 'qr_code_uuid', 'created_at'])) ||
+        (isTecnico() && areImmutableFieldsUnchanged([
+          'id', 'store_id', 'asset_type_id', 'tag_code', 'qr_code_uuid',
+          'brand', 'model', 'serial_number', 'criticality', 'installation_date', 'created_at'
+        ]))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 6. MAINTENANCE REQUESTS (Corrective tickets & SLA tracking)
+    match /maintenance_requests/{requestId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']) &&
+        isValidMaintenanceRequest(request.resource.data);
+      allow update: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']) &&
+        isValidMaintenanceRequest(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'ticket_number', 'store_id', 'created_by_user_id', 'reported_at']);
+      allow delete: if isAdmin();
+    }
+
+    // 7. PREVENTIVE MAINTENANCE PLANS, CHECKLIST ITEMS & EXECUTIONS
+    match /maintenance_plans/{planId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidMaintenancePlan(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidMaintenancePlan(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id']);
+      allow delete: if isAdmin();
+    }
+
+    match /plan_checklist_items/{itemId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if isAdminOrManager() && isValidPlanChecklistItem(request.resource.data);
+      allow update: if isAdminOrManager() &&
+        isValidPlanChecklistItem(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'plan_id']);
+      allow delete: if isAdmin();
+    }
+
+    match /preventive_executions/{executionId} {
+      allow read: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local']);
+      allow create: if hasAnyRole(['admin', 'jefe_mantenimiento', 'tecnico']) &&
+        isValidPreventiveExecution(request.resource.data);
+      allow update: if isValidPreventiveExecution(request.resource.data) && (
+        (isAdminOrManager() && areImmutableFieldsUnchanged(['id', 'sync_offline_id'])) ||
+        (isTecnico() && areImmutableFieldsUnchanged(['id', 'plan_id', 'asset_id', 'technician_id', 'executed_at', 'sync_offline_id']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 8. PHASE 2 LATENT COLLECTIONS (Deny all client writes in Phase 1; read restricted to Admin/Manager)
+    match /work_orders/{woId} {
+      allow read: if isAdminOrManager();
+      allow write: if false;
+    }
+
+    match /warehouses/{warehouseId} {
+      allow read: if isAdminOrManager();
+      allow write: if false;
+    }
+
+    match /spare_parts/{partId} {
+      allow read: if isAdminOrManager();
+      allow write: if false;
+    }
+
+    match /work_order_parts_used/{usageId} {
+      allow read: if isAdminOrManager();
+      allow write: if false;
+    }
+
+    match /iot_telemetry/{telemetryId} {
+      allow read: if isAdminOrManager();
+      allow write: if false;
+    }
+
+    // Default Deny All Other Paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

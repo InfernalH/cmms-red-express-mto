@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cmms_fracttal_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cmms_admin
+      POSTGRES_PASSWORD: cmms_password_2026
+      POSTGRES_DB: cmms_528_locales
+    ports:
+      - "5432:5432"
+    volumes:
+      - cmms_pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+
+volumes:
+  cmms_pgdata:

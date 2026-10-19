@@ -1,0 +1,293 @@
+// ============================================================================
+// PRISMA SCHEMA - SISTEMA CMMS / GMAO (RED DE 528 LOCALES)
+// Mapeo 1:1 exacto con el esquema SQL relacional PostgreSQL (Fase 1 + Fase 2)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Zone {
+  id               Int         @id @default(autoincrement())
+  name             String      @db.VarChar(100)
+  region           String      @db.VarChar(50) // 'CABA', 'GBA', 'Interior'
+  supervisorUserId Int?        @map("supervisor_user_id")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  supervisor       User?       @relation("ZoneSupervisor", fields: [supervisorUserId], references: [id], onDelete: SetNull)
+  stores           Store[]
+  warehouses       Warehouse[]
+
+  @@map("zones")
+}
+
+model Store {
+  id                  Int                   @id @default(autoincrement())
+  code                String                @unique @db.VarChar(20)
+  name                String                @db.VarChar(150)
+  zoneId              Int?                  @map("zone_id")
+  address             String                @db.VarChar(255)
+  city                String                @db.VarChar(100)
+  province            String                @db.VarChar(100)
+  latitude            Decimal?              @db.Decimal(10, 8)
+  longitude           Decimal?              @db.Decimal(11, 8)
+  surfaceSqm          Decimal?              @map("surface_sqm") @db.Decimal(8, 2)
+  phone               String?               @db.VarChar(50)
+  isActive            Boolean               @default(true) @map("is_active")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  zone                Zone?                 @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  userAssignments     UserStoreAssignment[]
+  assets              Asset[]
+  maintenanceRequests MaintenanceRequest[]
+  workOrders          WorkOrder[]
+
+  @@map("stores")
+}
+
+model User {
+  id                   Int                    @id @default(autoincrement())
+  fullName             String                 @map("full_name") @db.VarChar(150)
+  email                String                 @unique @db.VarChar(150)
+  phone                String?                @db.VarChar(50)
+  role                 String                 @db.VarChar(30) // 'admin', 'jefe_mantenimiento', 'tecnico', 'encargado_local'
+  companyName          String?                @map("company_name") @db.VarChar(100)
+  isActive             Boolean                @default(true) @map("is_active")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  supervisedZones      Zone[]                 @relation("ZoneSupervisor")
+  storeAssignments     UserStoreAssignment[]
+  createdRequests      MaintenanceRequest[]   @relation("RequestCreatedBy")
+  assignedRequests     MaintenanceRequest[]   @relation("RequestAssignedTechnician")
+  preventiveExecutions PreventiveExecution[]
+  assignedWorkOrders   WorkOrder[]
+
+  @@map("users")
+}
+
+model UserStoreAssignment {
+  userId  Int   @map("user_id")
+  storeId Int   @map("store_id")
+
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, storeId])
+  @@map("user_store_assignments")
+}
+
+model AssetCategory {
+  id         Int         @id @default(autoincrement())
+  code       String      @unique @db.VarChar(30) // 'HVAC', 'REFRIG'
+  name       String      @db.VarChar(100)
+
+  assetTypes AssetType[]
+
+  @@map("asset_categories")
+}
+
+model AssetType {
+  id               Int               @id @default(autoincrement())
+  categoryId       Int?              @map("category_id")
+  name             String            @db.VarChar(100)
+
+  category         AssetCategory?    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  assets           Asset[]
+  maintenancePlans MaintenancePlan[]
+
+  @@map("asset_types")
+}
+
+model Asset {
+  id                   Int                   @id @default(autoincrement())
+  storeId              Int                   @map("store_id")
+  assetTypeId          Int                   @map("asset_type_id")
+  tagCode              String                @unique @map("tag_code") @db.VarChar(50)
+  qrCodeUuid           String                @unique @default(dbgenerated("gen_random_uuid()")) @map("qr_code_uuid") @db.Uuid
+  brand                String?               @db.VarChar(100)
+  model                String?               @db.VarChar(100)
+  serialNumber         String?               @map("serial_number") @db.VarChar(100)
+  locationInStore      String?               @map("location_in_store") @db.VarChar(100)
+  criticality          String                @default("media") @db.VarChar(20) // 'baja', 'media', 'alta', 'critica'
+  status               String                @default("operativo") @db.VarChar(30) // 'operativo', 'con_falla', 'en_reparacion', 'baja'
+  capacityKcalFg       Int?                  @map("capacity_kcal_fg")
+  refrigerantType      String?               @map("refrigerant_type") @db.VarChar(30)
+  powerSupply          String?               @map("power_supply") @db.VarChar(30)
+  isInverter           Boolean               @default(false) @map("is_inverter")
+  installationDate     DateTime?             @map("installation_date") @db.Date
+  warrantyExpiration   DateTime?             @map("warranty_expiration") @db.Date
+  technicalSpecs       Json                  @default("{}") @map("technical_specs")
+  photoUrl             String?               @map("photo_url")
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  assetType            AssetType             @relation(fields: [assetTypeId], references: [id], onDelete: Restrict)
+  maintenanceRequests  MaintenanceRequest[]
+  preventiveExecutions PreventiveExecution[]
+  workOrders           WorkOrder[]
+  iotTelemetry         IotTelemetry[]
+
+  @@map("assets")
+}
+
+model MaintenanceRequest {
+  id                   Int         @id @default(autoincrement())
+  ticketNumber         String      @unique @map("ticket_number") @db.VarChar(30)
+  storeId              Int         @map("store_id")
+  assetId              Int?        @map("asset_id")
+  createdByUserId      Int?        @map("created_by_user_id")
+  failureSymptom       String      @map("failure_symptom") @db.VarChar(100)
+  priority             String      @default("media") @db.VarChar(20)
+  description          String?
+  photoEvidenceUrl     String?     @map("photo_evidence_url")
+  status               String      @default("abierto") @db.VarChar(30) // 'abierto', 'asignado', 'en_visita', 'resuelto', 'cancelado'
+  assignedTechnicianId Int?        @map("assigned_technician_id")
+  reportedAt           DateTime    @default(now()) @map("reported_at") @db.Timestamptz(6)
+  attendedAt           DateTime?   @map("attended_at") @db.Timestamptz(6)
+  resolvedAt           DateTime?   @map("resolved_at") @db.Timestamptz(6)
+  resolutionComment    String?     @map("resolution_comment")
+  closingPhotoUrl      String?     @map("closing_photo_url")
+
+  store                Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  asset                Asset?      @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  createdByUser        User?       @relation("RequestCreatedBy", fields: [createdByUserId], references: [id])
+  assignedTechnician   User?       @relation("RequestAssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  workOrders           WorkOrder[]
+
+  @@map("maintenance_requests")
+}
+
+model MaintenancePlan {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @db.VarChar(150)
+  assetTypeId          Int?                  @map("asset_type_id")
+  frequencyDays        Int                   @map("frequency_days")
+  isActive             Boolean               @default(true) @map("is_active")
+
+  assetType            AssetType?            @relation(fields: [assetTypeId], references: [id])
+  checklistItems       PlanChecklistItem[]
+  preventiveExecutions PreventiveExecution[]
+  workOrders           WorkOrder[]
+
+  @@map("maintenance_plans")
+}
+
+model PlanChecklistItem {
+  id              Int             @id @default(autoincrement())
+  planId          Int             @map("plan_id")
+  stepOrder       Int             @map("step_order")
+  taskDescription String          @map("task_description") @db.VarChar(255)
+  inputType       String          @default("check") @map("input_type") @db.VarChar(30) // 'check', 'number', 'photo'
+  unit            String?         @db.VarChar(20)
+
+  plan            MaintenancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("plan_checklist_items")
+}
+
+model PreventiveExecution {
+  id            Int             @id @default(autoincrement())
+  planId        Int             @map("plan_id")
+  assetId       Int             @map("asset_id")
+  technicianId  Int?            @map("technician_id")
+  executedAt    DateTime        @default(now()) @map("executed_at") @db.Timestamptz(6)
+  results       Json
+  observations  String?
+  signatureUrl  String?         @map("signature_url")
+  syncOfflineId String?         @unique @map("sync_offline_id") @db.Uuid
+
+  plan          MaintenancePlan @relation(fields: [planId], references: [id])
+  asset         Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  technician    User?           @relation(fields: [technicianId], references: [id])
+
+  @@map("preventive_executions")
+}
+
+// ============================================================================
+// MODELOS LATENTES FASE 2 (PUNTOS 3, 5 Y 8 - SIN UI EN FASE 1)
+// ============================================================================
+
+model WorkOrder {
+  id            Int                  @id @default(autoincrement())
+  woNumber      String               @unique @map("wo_number") @db.VarChar(30)
+  requestId     Int?                 @map("request_id")
+  planId        Int?                 @map("plan_id")
+  storeId       Int                  @map("store_id")
+  assetId       Int                  @map("asset_id")
+  assignedToId  Int?                 @map("assigned_to_id")
+  woType        String               @map("wo_type") @db.VarChar(30)
+  status        String               @default("pendiente") @db.VarChar(30)
+  scheduledDate DateTime?            @map("scheduled_date") @db.Date
+  startedAt     DateTime?            @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime?            @map("finished_at") @db.Timestamptz(6)
+  laborCost     Decimal              @default(0) @map("labor_cost") @db.Decimal(12, 2)
+  partsCost     Decimal              @default(0) @map("parts_cost") @db.Decimal(12, 2)
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request       MaintenanceRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  plan          MaintenancePlan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+  store         Store                @relation(fields: [storeId], references: [id])
+  asset         Asset                @relation(fields: [assetId], references: [id])
+  assignedTo    User?                @relation(fields: [assignedToId], references: [id])
+  partsUsed     WorkOrderPartUsed[]
+
+  @@map("work_orders")
+}
+
+model Warehouse {
+  id        Int                 @id @default(autoincrement())
+  name      String              @db.VarChar(100)
+  zoneId    Int?                @map("zone_id")
+
+  zone      Zone?               @relation(fields: [zoneId], references: [id])
+  partsUsed WorkOrderPartUsed[]
+
+  @@map("warehouses")
+}
+
+model SparePart {
+  id        Int                 @id @default(autoincrement())
+  sku       String              @unique @db.VarChar(50)
+  name      String              @db.VarChar(150)
+  unit      String              @db.VarChar(20)
+  minStock  Decimal             @default(0) @map("min_stock") @db.Decimal(8, 2)
+  unitCost  Decimal             @default(0) @map("unit_cost") @db.Decimal(10, 2)
+
+  partsUsed WorkOrderPartUsed[]
+
+  @@map("spare_parts")
+}
+
+model WorkOrderPartUsed {
+  id           Int        @id @default(autoincrement())
+  workOrderId  Int        @map("work_order_id")
+  sparePartId  Int        @map("spare_part_id")
+  warehouseId  Int?       @map("warehouse_id")
+  quantity     Decimal    @db.Decimal(8, 2)
+  costAtMoment Decimal?   @map("cost_at_moment") @db.Decimal(10, 2)
+
+  workOrder    WorkOrder  @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  sparePart    SparePart  @relation(fields: [sparePartId], references: [id])
+  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  @@map("work_order_parts_used")
+}
+
+model IotTelemetry {
+  id         BigInt   @id @default(autoincrement())
+  assetId    Int      @map("asset_id")
+  deviceMac  String?  @map("device_mac") @db.VarChar(50)
+  metricType String   @map("metric_type") @db.VarChar(50)
+  value      Decimal  @db.Decimal(10, 2)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("iot_telemetry")
+}

@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fracttal-AR CMMS / GMAO | Red 528 Locales — Pantalla Inicial + Firebase</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --border: #e2e8f0;
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --blue-50: #eff6ff;
+      --emerald-600: #059669;
+      --emerald-50: #ecfdf5;
+      --red-600: #dc2626;
+      --red-50: #fef2f2;
+      --amber-600: #d97706;
+      --amber-50: #fffbeb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--slate-900);
+      line-height: 1.45;
+    }
+    header {
+      background: var(--slate-900);
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      border-bottom: 1px solid var(--slate-800);
+    }
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--blue-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-blue { background: var(--blue-50); color: var(--blue-700); border: 1px solid #bfdbfe; }
+    .badge-green { background: var(--emerald-50); color: var(--emerald-600); border: 1px solid #a7f3d0; }
+    .badge-red { background: var(--red-50); color: var(--red-600); border: 1px solid #fecaca; }
+    .badge-amber { background: var(--amber-50); color: var(--amber-600); border: 1px solid #fde68a; }
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      border-top: 1px solid var(--slate-800);
+      padding-top: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .tab-btn.active {
+      background: var(--slate-800);
+      color: #60a5fa;
+      border-bottom-color: #3b82f6;
+    }
+    main { padding: 24px 0 48px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; }
+    .grid-2-1 { display: grid; grid-template-columns: 1.85fr 1.15fr; gap: 20px; }
+    @media (max-width: 920px) { .grid-2-1 { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .card-interactive { cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+    .card-interactive:hover { border-color: var(--blue-600); }
+    .card-selected { border: 2px solid var(--blue-600); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #0f172a 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn-blue { background: var(--blue-600); color: #fff; }
+    .btn-green { background: var(--emerald-600); color: #fff; }
+    .btn-red { background: var(--red-600); color: #fff; }
+    .btn-amber { background: var(--amber-600); color: #fff; }
+    .btn-dark { background: var(--slate-900); color: #fff; }
+    .btn-outline { background: #fff; color: var(--slate-700); border-color: #cbd5e1; }
+    .input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--slate-600); margin-bottom: 4px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .json-box {
+      background: var(--slate-900);
+      color: #6ee7b7;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--slate-900);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border-left: 4px solid #10b981;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 100;
+      display: none;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.68);
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 720px;
+      width: 100%;
+      padding: 22px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .phone-frame {
+      max-width: 380px;
+      margin: 0 auto;
+      background: var(--slate-900);
+      padding: 14px;
+      border-radius: 36px;
+      box-shadow: 0 20px 40px rgba(15,23,42,0.25);
+    }
+    .phone-screen {
+      background: #fff;
+      border-radius: 26px;
+      overflow: hidden;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header>
+    <div class="container">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-icon">❄️</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong style="font-size:17px;">Fracttal-AR CMMS / GMAO</strong>
+              <span class="badge badge-blue">Red 528 Locales • Fase 1 HVAC</span>
+            </div>
+            <div style="font-size:12px;color:#94a3b8;">
+              Climatización Activa • Etiquetado QR por Activo + Cloud Firestore Offline-First
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button id="offlineToggleBtn" class="btn btn-green" onclick="toggleOfflineMode()">
+            📶 ONLINE • Firestore Sync
+          </button>
+          <button class="btn btn-amber" onclick="switchTab('firebase')">
+            🔥 Conectar Firebase Firestore
+          </button>
+          <button class="btn btn-blue" onclick="openNewAssetModal()">
+            + Cargar Aire Acondicionado (Genera QR)
+          </button>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" id="navTabs">
+        <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">🏠 Pantalla Inicial</button>
+        <button class="tab-btn" data-tab="assets" onclick="switchTab('assets')">🏢 1. Activos HVAC & Generador QR</button>
+        <button class="tab-btn" data-tab="asset_360" onclick="switchTab('asset_360')">🔍 Hoja de Vida al Escanear QR</button>
+        <button class="tab-btn" data-tab="tickets" onclick="switchTab('tickets')">🛠️ 2. Solicitudes / Tickets</button>
+        <button class="tab-btn" data-tab="preventive" onclick="switchTab('preventive')">📋 3. Checklists Preventivos & Firma</button>
+        <button class="tab-btn" data-tab="kpis" onclick="switchTab('kpis')">📊 4. KPIs (MTTR / MTBF / SLA)</button>
+        <button class="tab-btn" data-tab="mobile" onclick="switchTab('mobile')">📱 5. App Móvil Offline + Escáner QR</button>
+        <button class="tab-btn" data-tab="firebase" onclick="switchTab('firebase')">🔥 Firebase & GitHub</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="appContent"></div>
+  </main>
+
+  <!-- MODAL ALTA DE ACTIVO HVAC -->
+  <div id="newAssetModal" class="modal-backdrop">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
+        <div>
+          <h3 style="font-size:17px;">Cargar Nuevo Aire Acondicionado (Genera Código QR Único)</h3>
+          <p style="font-size:12px;color:var(--slate-500);">Al guardar se asigna su UUID y se genera su etiqueta autoadhesiva QR vinculada a su Hoja de Vida.</p>
+        </div>
+        <button class="btn btn-outline" onclick="closeNewAssetModal()">✕</button>
+      </div>
+      <form onsubmit="handleCreateAsset(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Sucursal / Local</label>
+          <select id="fa_store" class="input">
+            <option value="1">LOC-001 - Sucursal Palermo Soho (CABA)</option>
+            <option value="2">LOC-002 - Sucursal Belgrano Cabildo (CABA)</option>
+            <option value="5">LOC-005 - Sucursal San Isidro Centro (GBA)</option>
+            <option value="10">LOC-010 - Sucursal Córdoba Nueva Córdoba (Interior)</option>
+          </select>
+        </div>
+        <div>
+          <label>Tipo de Equipo HVAC</label>
+          <select id="fa_type" class="input">
+            <option value="Split Muro">Split Muro</option>
+            <option value="Piso-Techo">Piso-Techo</option>
+            <option value="Rooftop">Rooftop</option>
+            <option value="Cortina de Aire">Cortina de Aire</option>
+          </select>
+        </div>
+        <div>
+          <label>Tag Code Único</label>
+          <input id="fa_tag" class="input mono" value="HVAC-LOC001-SM02" required />
+        </div>
+        <div>
+          <label>Criticidad ISO 55000</label>
+          <select id="fa_crit" class="input">
+            <option value="critica">Crítica (SLA 4 hs)</option>
+            <option value="alta" selected>Alta (SLA 8 hs)</option>
+            <option value="media">Media (SLA 24 hs)</option>
+            <option value="baja">Baja (SLA 48 hs)</option>
+          </select>
+        </div>
+        <div>
+          <label>Marca</label>
+          <input id="fa_brand" class="input" value="Daikin" required />
+        </div>
+        <div>
+          <label>Modelo</label>
+          <input id="fa_model" class="input" value="FTXM50M Inverter" required />
+        </div>
+        <div>
+          <label>Capacidad (kcal/fg)</label>
+          <input id="fa_cap" type="number" class="input" value="4500" />
+        </div>
+        <div>
+          <label>Ubicación en el Local</label>
+          <input id="fa_loc" class="input" value="Línea de Cajas Rápidas" required />
+        </div>
+        <div style="grid-column:1 / -1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="closeNewAssetModal()">Cancelar</button>
+          <button type="submit" class="btn btn-blue">Guardar Equipo y Generar Etiqueta QR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL IMPRESIÓN DE ETIQUETAS QR -->
+  <div id="qrPrintModal" class="modal-backdrop">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
+        <div>
+          <span class="badge badge-blue">Etiquetado de Activos HVAC</span>
+          <h3 style="font-size:17px;margin-top:4px;">Etiquetas QR Listas para Imprimir y Pegar en Equipos</h3>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-blue" onclick="window.print()">🖨️ Imprimir</button>
+          <button class="btn btn-outline" onclick="closeQrPrintModal()">Cerrar ✕</button>
+        </div>
+      </div>
+      <div id="qrPrintBody" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentTab = "home";
+    let isOffline = false;
+    let offlineQueue = [];
+    let fbProjectId = localStorage.getItem("cmms_fb_project_id") || "";
+    let fbApiKey = localStorage.getItem("cmms_fb_api_key") || "";
+
+    const zones = [
+      { id: 1, name: "CABA Centro y Corredor Norte", region: "CABA" },
+      { id: 2, name: "CABA Sur y Oeste", region: "CABA" },
+      { id: 3, name: "GBA Norte (Vicente López a Pilar)", region: "GBA" },
+      { id: 4, name: "GBA Oeste (Morón a Luján)", region: "GBA" },
+      { id: 5, name: "GBA Sur (Avellaneda a La Plata)", region: "GBA" },
+      { id: 6, name: "Región Centro (Córdoba y Santa Fe)", region: "Interior" },
+      { id: 7, name: "Región Cuyo y NOA (Mendoza, Tucumán, Salta)", region: "Interior" },
+      { id: 8, name: "Región Patagonia y Costa Atlántica", region: "Interior" }
+    ];
+
+    const stores = [
+      { id: 1, code: "LOC-001", name: "Sucursal Palermo Soho", city: "CABA", region: "CABA", zone_id: 1, address: "Av. Santa Fe 4250", is_active: true },
+      { id: 2, code: "LOC-002", name: "Sucursal Belgrano Cabildo", city: "CABA", region: "CABA", zone_id: 1, address: "Av. Cabildo 2140", is_active: true },
+      { id: 5, code: "LOC-005", name: "Sucursal San Isidro Centro", city: "San Isidro", region: "GBA", zone_id: 3, address: "Av. Centenario 650", is_active: true },
+      { id: 10, code: "LOC-010", name: "Sucursal Córdoba Nueva Córdoba", city: "Córdoba", region: "Interior", zone_id: 6, address: "Bv. Chacabuco 620", is_active: true }
+    ];
+
+    let assets = [
+      {
+        id: 1, store_id: 1, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC001-RT01",
+        qr_code_uuid: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        brand: "Carrier", model: "50TC-D12 WeatherMaster", serial_number: "SN-CAR-2023-8812",
+        location_in_store: "Azotea Técnica - Salón Principal", criticality: "critica", status: "operativo",
+        capacity_kcal_fg: 30000, refrigerant_type: "R410A", power_supply: "380V Trifásico",
+        installation_date: "2023-02-15", warranty_expiration: "2026-02-15",
+        technical_specs: { caudal_m3h: 6800, consumo_nominal_amp: 18.4, compresores_scroll: 2, filtros_medida: "600x600x50mm G4", presion_baja_psi: 118 }
+      },
+      {
+        id: 2, store_id: 1, asset_type_id: 2, type: "Piso-Techo", tag_code: "HVAC-LOC001-PT01",
+        qr_code_uuid: "b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+        brand: "Surrey", model: "651QFB060 Piso-Techo", serial_number: "SN-SUR-2022-4410",
+        location_in_store: "Salón de Ventas Sector Cajas", criticality: "alta", status: "con_falla",
+        capacity_kcal_fg: 15000, refrigerant_type: "R410A", power_supply: "380V Trifásico",
+        installation_date: "2022-11-10", warranty_expiration: "2025-11-10",
+        technical_specs: { caudal_m3h: 2100, consumo_nominal_amp: 9.2, bomba_condensado: true, presion_baja_psi: 115 }
+      },
+      {
+        id: 3, store_id: 2, asset_type_id: 1, type: "Split Muro", tag_code: "HVAC-LOC002-SM01",
+        qr_code_uuid: "e4eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
+        brand: "Midea", model: "MSAG-6000 Xtreme Save", serial_number: "SN-MID-2023-7721",
+        location_in_store: "Oficina Gerencia y Rack IT", criticality: "critica", status: "en_reparacion",
+        capacity_kcal_fg: 6000, refrigerant_type: "R410A", power_supply: "220V Monofásico",
+        installation_date: "2023-06-12", warranty_expiration: "2025-06-12",
+        technical_specs: { caudal_m3h: 950, consumo_nominal_amp: 7.5, uso_24x7_rack_it: true, setpoint_c: 21 }
+      },
+      {
+        id: 4, store_id: 10, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC010-RT01",
+        qr_code_uuid: "27eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
+        brand: "Carrier", model: "50TC-D08", serial_number: "SN-CAR-2022-5501",
+        location_in_store: "Azotea Nueva Córdoba", criticality: "critica", status: "con_falla",
+        capacity_kcal_fg: 22500, refrigerant_type: "R410A", power_supply: "380V Trifásico",
+        installation_date: "2022-10-14", warranty_expiration: "2025-10-14",
+        technical_specs: { caudal_m3h: 5100, consumo_nominal_amp: 14.2, filtros_medida: "500x500x50mm G4" }
+      }
+    ];
+
+    let selectedAssetId = 1;
+
+    let tickets = [
+      {
+        id: 1, ticket_number: "TCK-2026-0001", store_id: 1, asset_id: 2,
+        failure_symptom: "Pérdida de agua / Goteo interior", priority: "alta",
+        description: "El equipo Piso-Techo sobre la línea de cajas N° 2 gotea de forma continua sobre el mostrador.",
+        status: "en_visita", technician: "Carlos Rodríguez",
+        reported_at: "19/10/2026 09:15", resolved_at: null, resolution_comment: null
+      },
+      {
+        id: 2, ticket_number: "TCK-2026-0002", store_id: 2, asset_id: 3,
+        failure_symptom: "No enfría / Compresor no acopla", priority: "critica",
+        description: "El Split del cuarto de Rack IT marca error E4 y la temperatura subió a 29°C.",
+        status: "asignado", technician: "Carlos Rodríguez",
+        reported_at: "19/10/2026 11:10", resolved_at: null, resolution_comment: null
+      },
+      {
+        id: 3, ticket_number: "TCK-2026-0004", store_id: 1, asset_id: 1,
+        failure_symptom: "Bajo rendimiento / Filtros saturados", priority: "media",
+        description: "Bajo caudal de aire en difusores centrales del salón.",
+        status: "resuelto", technician: "Carlos Rodríguez",
+        reported_at: "10/10/2026 09:00", resolved_at: "10/10/2026 13:30",
+        resolution_comment: "Se reemplazaron 4 filtros G4 colmatados, se limpió serpentina y se verificaron presiones (118 PSI baja)."
+      }
+    ];
+
+    let preventives = [
+      {
+        id: 1, asset_id: 1, plan_id: 2, plan_name: "Preventivo Trimestral Rooftop Alta Capacidad (ISO 55000)",
+        executed_at: "09/10/2026 15:20", technician: "Carlos Rodríguez",
+        observations: "Equipo Rooftop Carrier en óptimas condiciones. Correas ajustadas y filtros G4 nuevos.",
+        results: { filtros_limpios: true, presion_baja_psi: 119, corriente_amp: 18.1 },
+        signature: "Conformidad: Sofía Peralta (Encargada LOC-001)",
+        sync_offline_id: "99eebc99-9c0b-4ef8-bb6d-6bb9bd380a99"
+      }
+    ];
+
+    function generateUuid() {
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+        const r = (Math.random() * 16) | 0;
+        return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+      });
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = "✅ " + msg;
+      el.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => { el.style.display = "none"; }, 4500);
+    }
+
+    function createQrSvgHtml(value, size = 92) {
+      const modules = 25;
+      const matrix = Array.from({ length: modules }, () => Array(modules).fill(false));
+
+      function drawFinder(r0, c0) {
+        for (let r = 0; r < 7; r++) {
+          for (let c = 0; c < 7; c++) {
+            if (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
+              matrix[r0 + r][c0 + c] = true;
+            }
+          }
+        }
+      }
+      drawFinder(0, 0);
+      drawFinder(0, modules - 7);
+      drawFinder(modules - 7, 0);
+
+      for (let i = 8; i < modules - 8; i++) {
+        matrix[6][i] = i % 2 === 0;
+        matrix[i][6] = i % 2 === 0;
+      }
+
+      let seed = 2166136261;
+      for (let i = 0; i < value.length; i++) {
+        seed ^= value.charCodeAt(i);
+        seed = Math.imul(seed, 16777619);
+      }
+
+      for (let r = 0; r < modules; r++) {
+        for (let c = 0; c < modules; c++) {
+          if ((r < 8 && c < 8) || (r < 8 && c >= modules - 8) || (r >= modules - 8 && c < 8) || r === 6 || c === 6) continue;
+          const ch = value.charCodeAt((r * modules + c) % value.length);
+          matrix[r][c] = (((r * 31 + c * 17 + ch * 13) ^ (seed >>> ((r + c) % 16))) & 1) === 1;
+        }
+      }
+
+      let rects = "";
+      for (let r = 0; r < modules; r++) {
+        for (let c = 0; c < modules; c++) {
+          if (matrix[r][c]) {
+            rects += `<rect x="${c + 2}" y="${r + 2}" width="1" height="1" fill="#0f172a"/>`;
+          }
+        }
+      }
+
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${modules + 4} ${modules + 4}" style="background:#fff;border-radius:6px;display:block;" shape-rendering="crispEdges"><rect width="${modules + 4}" height="${modules + 4}" fill="#ffffff"/>${rects}</svg>`;
+    }
+
+    function toggleOfflineMode() {
+      isOffline = !isOffline;
+      const btn = document.getElementById("offlineToggleBtn");
+      if (isOffline) {
+        btn.className = "btn btn-amber";
+        btn.textContent = `⚡ MODO OFFLINE CAMPO (${offlineQueue.length} en cola)`;
+        showToast("Modo Offline activado: Las operaciones se guardan con sync_offline_id.");
+      } else {
+        btn.className = "btn btn-green";
+        btn.textContent = "📶 ONLINE • Firestore Sync";
+        showToast("Conexión restablecida y sincronizada.");
+      }
+      render();
+    }
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+      });
+      render();
+    }
+
+    function scanAssetQr(assetId) {
+      selectedAssetId = Number(assetId);
+      const asset = assets.find((a) => a.id === selectedAssetId);
+      switchTab("asset_360");
+      if (asset) {
+        showToast(`Código QR escaneado: ${asset.tag_code} — Mostrando Ficha Técnica e Historial.`);
+      }
+    }
+
+    function openNewAssetModal() {
+      document.getElementById("newAssetModal").style.display = "flex";
+    }
+    function closeNewAssetModal() {
+      document.getElementById("newAssetModal").style.display = "none";
+    }
+
+    function handleCreateAsset(e) {
+      e.preventDefault();
+      const created = {
+        id: assets.length + 1,
+        store_id: Number(document.getElementById("fa_store").value),
+        asset_type_id: 1,
+        type: document.getElementById("fa_type").value,
+        tag_code: document.getElementById("fa_tag").value.toUpperCase(),
+        qr_code_uuid: generateUuid(),
+        brand: document.getElementById("fa_brand").value,
+        model: document.getElementById("fa_model").value,
+        serial_number: "SN-" + Math.floor(100000 + Math.random() * 900000),
+        location_in_store: document.getElementById("fa_loc").value,
+        criticality: document.getElementById("fa_crit").value,
+        status: "operativo",
+        capacity_kcal_fg: Number(document.getElementById("fa_cap").value),
+        refrigerant_type: "R32 / R410A",
+        power_supply: "220V / 380V",
+        installation_date: "2026-10-19",
+        warranty_expiration: "2028-10-19",
+        technical_specs: { consumo_nominal_amp: 7.4, norma: "ISO 55000 Fase 1" }
+      };
+      assets.unshift(created);
+      selectedAssetId = created.id;
+      closeNewAssetModal();
+      switchTab("assets");
+      openQrPrintModal([created.id]);
+      showToast(`Aire acondicionado ${created.tag_code} cargado y etiqueta QR generada.`);
+    }
+
+    function openQrPrintModal(assetIds) {
+      const list = assets.filter((a) => assetIds.includes(a.id));
+      const container = document.getElementById("qrPrintBody");
+      container.innerHTML = list.map((a) => {
+        const store = stores.find((s) => s.id === a.store_id) || stores[0];
+        return `
+          <div style="border:2px solid #0f172a;border-radius:12px;padding:14px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid #cbd5e1;padding-bottom:6px;margin-bottom:10px;">
+              <span style="background:#0f172a;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;">RED 528 • ACTIVO HVAC</span>
+              <strong style="font-size:11px;">${store.code}</strong>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="border:1px solid #cbd5e1;padding:4px;border-radius:8px;">
+                ${createQrSvgHtml("https://cmms.red528.com.ar/?qr=" + a.qr_code_uuid, 88)}
+              </div>
+              <div style="font-size:12px;">
+                <div class="mono" style="font-weight:900;font-size:15px;">${a.tag_code}</div>
+                <div style="font-weight:700;">${a.type} • ${a.brand} ${a.model}</div>
+                <div style="color:#475569;font-size:11px;">📍 ${store.name} (${a.location_in_store})</div>
+                <div class="mono" style="color:#64748b;font-size:10px;margin-top:3px;">UUID: ${a.qr_code_uuid.slice(0, 18)}...</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+              <span>Escanear para abrir Ficha Técnica e Historial</span>
+              <button class="btn btn-blue" style="padding:4px 8px;font-size:11px;" onclick="closeQrPrintModal();scanAssetQr(${a.id});">Simular Escaneo →</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+      document.getElementById("qrPrintModal").style.display = "flex";
+    }
+
+    function closeQrPrintModal() {
+      document.getElementById("qrPrintModal").style.display = "none";
+    }
+
+    function resolveTicket(ticketId) {
+      tickets = tickets.map((t) => {
+        if (t.id !== ticketId) return t;
+        return {
+          ...t,
+          status: "resuelto",
+          resolved_at: "19/10/2026 15:25",
+          resolution_comment: "Reparación completada en visita técnica. Presiones y consumos eléctricos normalizados."
+        };
+      });
+      const t = tickets.find((x) => x.id === ticketId);
+      if (t) {
+        assets = assets.map((a) => a.id === t.asset_id ? { ...a, status: "operativo" } : a);
+      }
+      showToast("Ticket resuelto e incorporado al historial del equipo.");
+      render();
+    }
+
+    function handleCreateTicket(e) {
+      e.preventDefault();
+      const assetId = Number(document.getElementById("tk_asset").value);
+      const symptom = document.getElementById("tk_symptom").value;
+      const priority = document.getElementById("tk_priority").value;
+      const desc = document.getElementById("tk_desc").value || "Falla reportada desde sucursal.";
+      const asset = assets.find((a) => a.id === assetId) || assets[0];
+      const nextNum = "TCK-2026-000" + (tickets.length + 3);
+
+      tickets.unshift({
+        id: tickets.length + 1,
+        ticket_number: nextNum,
+        store_id: asset.store_id,
+        asset_id: asset.id,
+        failure_symptom: symptom,
+        priority: priority,
+        description: desc,
+        status: "abierto",
+        technician: "Pendiente de asignar",
+        reported_at: "19/10/2026 15:25",
+        resolved_at: null,
+        resolution_comment: null
+      });
+
+      assets = assets.map((a) => a.id === asset.id ? { ...a, status: "con_falla" } : a);
+      if (isOffline) {
+        offlineQueue.unshift({ id: generateUuid(), label: `Ticket ${nextNum} en ${asset.tag_code}` });
+      }
+      showToast(`Ticket ${nextNum} creado y vinculado al historial de ${asset.tag_code}.`);
+      render();
+    }
+
+    function handleSavePreventive(e) {
+      e.preventDefault();
+      const assetId = Number(document.getElementById("pv_asset").value);
+      const psi = Number(document.getElementById("pv_psi").value || 118);
+      const amp = Number(document.getElementById("pv_amp").value || 14.5);
+      const obs = document.getElementById("pv_obs").value || "Checklist preventivo completado conforme a protocolo ISO 55000.";
+      const sig = document.getElementById("pv_sig").value || "Firmado en conformidad por Encargado de Tienda";
+
+      preventives.unshift({
+        id: preventives.length + 1,
+        asset_id: assetId,
+        plan_id: 1,
+        plan_name: "Preventivo Programado HVAC (Limpieza + Control Eléctrico)",
+        executed_at: "19/10/2026 15:25",
+        technician: "Carlos Rodríguez",
+        observations: obs,
+        results: { filtros_limpios: true, drenaje_ok: true, presion_baja_psi: psi, corriente_amp: amp },
+        signature: sig,
+        sync_offline_id: generateUuid()
+      });
+
+      selectedAssetId = assetId;
+      showToast("Ejecución preventiva firmada y agregada a la Hoja de Vida del equipo.");
+      switchTab("asset_360");
+    }
+
+    // Conversión de objeto JS a formato Firestore REST API Value
+    function toFirestoreFields(obj) {
+      const fields = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (v === null || v === undefined) {
+          fields[k] = { nullValue: null };
+        } else if (typeof v === "boolean") {
+          fields[k] = { booleanValue: v };
+        } else if (typeof v === "number") {
+          if (Number.isInteger(v)) fields[k] = { integerValue: String(v) };
+          else fields[k] = { doubleValue: v };
+        } else if (typeof v === "object") {
+          fields[k] = { mapValue: { fields: toFirestoreFields(v) } };
+        } else {
+          fields[k] = { stringValue: String(v) };
+        }
+      }
+      return fields;
+    }
+
+    async function seedCloudFirestoreFromBrowser(e) {
+      e.preventDefault();
+      const projectId = document.getElementById("fb_project_id").value.trim();
+      const apiKey = document.getElementById("fb_api_key").value.trim();
+      if (!projectId) {
+        showToast("Ingresá el Project ID de tu proyecto de Firebase.");
+        return;
+      }
+      localStorage.setItem("cmms_fb_project_id", projectId);
+      localStorage.setItem("cmms_fb_api_key", apiKey);
+      fbProjectId = projectId;
+      fbApiKey = apiKey;
+
+      const statusBox = document.getElementById("fbSeedStatus");
+      statusBox.innerHTML = "⏳ Conectando con Cloud Firestore y creando colecciones (zones, stores, assets, maintenance_requests, preventive_executions)...";
+
+      const baseUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
+      const keyParam = apiKey ? `?key=${encodeURIComponent(apiKey)}` : "";
+
+      try {
+        let count = 0;
+        for (const z of zones) {
+          await fetch(`${baseUrl}/zones/${z.id}${keyParam ? keyParam + "&" : "?"}documentId=zone_${z.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fields: toFirestoreFields(z) })
+          });
+          count++;
+        }
+        for (const s of stores) {
+          await fetch(`${baseUrl}/stores/${s.code}${keyParam}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fields: toFirestoreFields(s) })
+          });
+          count++;
+        }
+        for (const a of assets) {
+          await fetch(`${baseUrl}/assets/${a.tag_code}${keyParam}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fields: toFirestoreFields(a) })
+          });
+          count++;
+        }
+        for (const t of tickets) {
+          await fetch(`${baseUrl}/maintenance_requests/${t.ticket_number}${keyParam}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fields: toFirestoreFields(t) })
+          });
+          count++;
+        }
+        for (const p of preventives) {
+          await fetch(`${baseUrl}/preventive_executions/exec_${p.id}${keyParam}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fields: toFirestoreFields(p) })
+          });
+          count++;
+        }
+        statusBox.innerHTML = `✅ <b>¡Base de datos Cloud Firestore poblada con éxito!</b> Se crearon/actualizaron <b>${count} documentos</b> en las colecciones <code>zones</code>, <code>stores</code>, <code>assets</code>, <code>maintenance_requests</code> y <code>preventive_executions</code> del proyecto <code>${projectId}</code>.`;
+        showToast(`¡${count} documentos creados en Cloud Firestore (${projectId})!`);
+      } catch (err) {
+        statusBox.innerHTML = `⚠️ Error de red o permisos al conectar con Firestore: ${err.message}. Verificá que hayas creado la base de datos Firestore en la consola de Firebase.`;
+      }
+    }
+
+    function render() {
+      const container = document.getElementById("appContent");
+      const selectedAsset = assets.find((a) => a.id === selectedAssetId) || assets[0];
+      const openTicketsCount = tickets.filter((t) => t.status !== "resuelto").length;
+
+      if (currentTab === "home") {
+        container.innerHTML = `
+          <div class="hero">
+            <div style="max-width:680px;">
+              <span class="badge badge-blue" style="margin-bottom:8px;">🏠 PANTALLA INICIAL • CENTRO DE CONTROL CMMS</span>
+              <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Sistema de Mantenimiento Climatización (HVAC) — Red 528 Locales</h2>
+              <p style="font-size:13px;color:#cbd5e1;">
+                Bienvenido al panel principal. Desde aquí podés acceder a los 5 módulos activos de Fase 1, dar de alta equipos de aire acondicionado para generar sus etiquetas QR, simular el escaneo de un QR o poblar tu base de datos en Firebase Cloud Firestore.
+              </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
+              <button class="btn btn-amber" onclick="switchTab('firebase')">🔥 Configurar Firebase & GitHub</button>
+            </div>
+          </div>
+
+          <div class="grid-4" style="margin-bottom:20px;">
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Red Nacional Activa</span>
+              <div style="font-size:28px;font-weight:900;margin-top:4px;">528 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">locales</span></div>
+              <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">8 Zonas (CABA, GBA e Interior)</div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTTR (Tiempo Medio Reparación)</span>
+              <div style="font-size:28px;font-weight:900;margin-top:4px;">3.75 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
+              <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">Dentro de meta SLA (&lt; 6.0 hs)</div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTBF (Tiempo Entre Fallas)</span>
+              <div style="font-size:28px;font-weight:900;margin-top:4px;">958.4 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
+              <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">Disponibilidad Técnica: 94.8%</div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets Abiertos Ahora</span>
+              <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">activos</span></div>
+              <div style="font-size:12px;color:var(--amber-600);margin-top:4px;">Cumplimiento SLA Red: 92.4%</div>
+            </div>
+          </div>
+
+          <h3 style="font-size:16px;margin-bottom:12px;">Accesos Directos a los Módulos del Sistema</h3>
+          <div class="grid-3">
+            <div class="card card-interactive" onclick="switchTab('assets')">
+              <span class="badge badge-blue">Módulo 1 • ${assets.length} Equipos con QR</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Activos HVAC y Generador de Códigos QR</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Cargá los aires acondicionados de cada local, consultá su ficha JSONB e imprimí sus etiquetas QR autoadhesivas.</p>
+            </div>
+            <div class="card card-interactive" onclick="switchTab('asset_360')">
+              <span class="badge badge-green">Destino del Escaneo QR</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">🔍 Hoja de Vida 360° e Historial del Equipo</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Pantalla que se abre al escanear el código QR pegado en el equipo: muestra sus datos técnicos, historial de fallas y checklists.</p>
+            </div>
+            <div class="card card-interactive" onclick="switchTab('tickets')">
+              <span class="badge badge-red">Módulo 2 • ${openTicketsCount} Pendientes</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">🛠️ Solicitudes de Mantenimiento / Tickets</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Reporte de fallas desde tienda con síntomas estandarizados, asignación de técnicos y resolución.</p>
+            </div>
+            <div class="card card-interactive" onclick="switchTab('preventive')">
+              <span class="badge badge-green">Módulo 3 • ISO 55000</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">📋 Planes Preventivos y Firma Digital</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Ejecución de checklists dinámicos con mediciones de presión (PSI), corriente (A) y firma de conformidad.</p>
+            </div>
+            <div class="card card-interactive" onclick="switchTab('kpis')">
+              <span class="badge badge-amber">Módulo 4 • Indicadores</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">📊 KPIs Operativos (MTTR, MTBF y SLA)</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Tablero gerencial con métricas por región (CABA, GBA, Interior) y auditoría de tiempos por ticket.</p>
+            </div>
+            <div class="card card-interactive" onclick="switchTab('firebase')">
+              <span class="badge badge-amber">Cloud Firestore + Git</span>
+              <h4 style="font-size:16px;margin:8px 0 4px;">🔥 Base de Datos Firebase & Subida a GitHub</h4>
+              <p style="font-size:12px;color:var(--slate-600);">Poblá automáticamente las colecciones en tu proyecto de Firebase Cloud Firestore desde el navegador.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "firebase") {
+        container.innerHTML = `
+          <div class="grid-2-1">
+            <div class="card">
+              <span class="badge badge-amber">Paso 1 • Base de Datos en la Nube</span>
+              <h2 style="font-size:20px;margin:6px 0;">🔥 Crear y Poblar las Colecciones en Firebase Cloud Firestore</h2>
+              <p style="font-size:13px;color:var(--slate-600);margin-bottom:14px;">
+                Ingresá el <b>Project ID</b> de tu proyecto de Firebase (creado en <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue-600);font-weight:700;">console.firebase.google.com</a> $\rightarrow$ Firestore Database) y hacé clic en el botón para crear automáticamente todas las colecciones y documentos iniciales del CMMS:
+              </p>
+              <form onsubmit="seedCloudFirestoreFromBrowser(event)" style="display:grid;gap:12px;">
+                <div>
+                  <label>Firebase Project ID (obligatorio)</label>
+                  <input id="fb_project_id" class="input mono" placeholder="ej: cmms-red-528-locales" value="${fbProjectId}" required />
+                </div>
+                <div>
+                  <label>Firebase Web API Key (opcional si las reglas están en modo prueba)</label>
+                  <input id="fb_api_key" class="input mono" placeholder="AIzaSy..." value="${fbApiKey}" />
+                </div>
+                <button type="submit" class="btn btn-amber" style="padding:11px;font-size:13px;">
+                  🚀 Crear Colecciones y Cargar Datos Iniciales en Cloud Firestore Ahora
+                </button>
+              </form>
+              <div id="fbSeedStatus" style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--slate-700);">
+                Colecciones que se crearán automáticamente: <code>zones</code>, <code>stores</code>, <code>assets</code> (con QR UUID y JSONB), <code>maintenance_requests</code> y <code>preventive_executions</code>.
+              </div>
+            </div>
+
+            <div class="card" style="height:fit-content;">
+              <span class="badge badge-blue">Paso 2 • Repositorio GitHub</span>
+              <h3 style="font-size:16px;margin:6px 0 8px;">🐙 Subir a tu Cuenta de GitHub</h3>
+              <p style="font-size:12px;color:var(--slate-600);margin-bottom:10px;">
+                El repositorio Git local ya está inicializado con todos los archivos del proyecto, reglas de Firestore (<code>firestore.rules</code>) e índices (<code>firestore.indexes.json</code>).
+              </p>
+              <div style="font-size:12px;color:var(--slate-700);margin-bottom:6px;font-weight:700;">Comandos listos para conectar tu repo de GitHub:</div>
+              <pre class="json-box mono" style="font-size:11px;">git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
+git branch -M main
+git push -u origin main</pre>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "assets") {
+        const allIds = JSON.stringify(assets.map((a) => a.id));
+        container.innerHTML = `
+          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:20px;">🏢 Padrón de Aires Acondicionados (HVAC) y Generador de QR</h2>
+              <p style="font-size:13px;color:var(--slate-600);">Cada equipo cargado genera su propio código QR único vinculado a sus datos técnicos e historial.</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-dark" onclick='openQrPrintModal(${allIds})'>🖨️ Imprimir Plancha QR (${assets.length} Equipos)</button>
+              <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Nuevo Aire Acondicionado</button>
+            </div>
+          </div>
+
+          <div class="grid-2-1">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              ${assets.map((a) => {
+                const store = stores.find((s) => s.id === a.store_id) || stores[0];
+                const tCount = tickets.filter((t) => t.asset_id === a.id).length;
+                const pCount = preventives.filter((p) => p.asset_id === a.id).length;
+                return `
+                  <div class="card card-interactive ${a.id === selectedAsset.id ? "card-selected" : ""}" onclick="selectedAssetId=${a.id};render();">
+                    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+                      <div style="display:flex;gap:12px;align-items:center;">
+                        <div style="border:1px solid var(--border);padding:4px;border-radius:8px;background:#f8fafc;">
+                          ${createQrSvgHtml("https://cmms.red528.com.ar/?qr=" + a.qr_code_uuid, 60)}
+                        </div>
+                        <div>
+                          <div style="display:flex;gap:6px;align-items:center;">
+                            <span class="mono badge badge-blue">${a.tag_code}</span>
+                            <span class="badge ${a.status === 'operativo' ? 'badge-green' : 'badge-red'}">${a.status}</span>
+                            <span style="font-size:11px;color:var(--slate-500);">Criticidad: <b>${a.criticality.toUpperCase()}</b></span>
+                          </div>
+                          <div style="font-weight:800;font-size:15px;margin-top:4px;">${a.type} • ${a.brand} ${a.model}</div>
+                          <div style="font-size:12px;color:var(--slate-600);">📍 ${store.code} ${store.name} — ${a.location_in_store}</div>
+                          <div style="font-size:11px;color:var(--slate-500);margin-top:4px;">
+                            🛠️ <b>${tCount}</b> tickets en historial • 📋 <b>${pCount}</b> preventivos firmados
+                          </div>
+                        </div>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <button class="btn btn-outline" onclick="event.stopPropagation();openQrPrintModal([${a.id}]);">🖨️ Etiqueta QR</button>
+                        <button class="btn btn-blue" onclick="event.stopPropagation();scanAssetQr(${a.id});">🔍 Escanear QR (Datos + Historial) →</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <div class="card" style="height:fit-content;">
+              <div style="border:2px solid #0f172a;border-radius:12px;padding:14px;background:#f8fafc;margin-bottom:14px;">
+                <span style="background:#0f172a;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;">ETIQUETA QR DEL ACTIVO SELECCIONADO</span>
+                <div style="display:flex;gap:12px;align-items:center;margin-top:10px;">
+                  <div style="border:1px solid #cbd5e1;padding:4px;background:#fff;border-radius:8px;">
+                    ${createQrSvgHtml("https://cmms.red528.com.ar/?qr=" + selectedAsset.qr_code_uuid, 94)}
+                  </div>
+                  <div style="font-size:12px;">
+                    <div class="mono" style="font-weight:900;font-size:16px;">${selectedAsset.tag_code}</div>
+                    <div style="font-weight:700;">${selectedAsset.brand} ${selectedAsset.model}</div>
+                    <div style="color:var(--slate-600);">${selectedAsset.location_in_store}</div>
+                    <div class="mono" style="font-size:10px;color:var(--slate-500);margin-top:4px;word-break:break-all;">UUID: ${selectedAsset.qr_code_uuid}</div>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+                  <button class="btn btn-dark" onclick="openQrPrintModal([${selectedAsset.id}])">🖨️ Imprimir QR</button>
+                  <button class="btn btn-blue" onclick="scanAssetQr(${selectedAsset.id})">📱 Simular Escaneo QR</button>
+                </div>
+              </div>
+
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--slate-600);margin-bottom:6px;">
+                Especificaciones Técnicas JSONB (technical_specs)
+              </div>
+              <pre class="json-box mono">${JSON.stringify(selectedAsset.technical_specs, null, 2)}</pre>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "asset_360") {
+        const store = stores.find((s) => s.id === selectedAsset.store_id) || stores[0];
+        const assetTickets = tickets.filter((t) => t.asset_id === selectedAsset.id);
+        const assetPreventives = preventives.filter((p) => p.asset_id === selectedAsset.id);
+
+        container.innerHTML = `
+          <div class="hero" style="margin-bottom:18px;">
+            <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+              <div style="background:#fff;padding:6px;border-radius:12px;">
+                ${createQrSvgHtml("https://cmms.red528.com.ar/?qr=" + selectedAsset.qr_code_uuid, 96)}
+              </div>
+              <div>
+                <span class="badge badge-blue">PANTALLA DESTINO AL ESCANEAR EL CÓDIGO QR DEL EQUIPO</span>
+                <h2 class="mono" style="font-size:22px;font-weight:900;margin-top:6px;">
+                  ${selectedAsset.tag_code} — ${selectedAsset.brand} ${selectedAsset.model}
+                </h2>
+                <p style="font-size:13px;color:#cbd5e1;margin-top:2px;">
+                  📍 <b>${store.code} - ${store.name}</b> • Sector: <b>${selectedAsset.location_in_store}</b> • N/S: <span class="mono">${selectedAsset.serial_number}</span>
+                </p>
+                <p class="mono" style="font-size:11px;color:#93c5fd;margin-top:4px;">
+                  URL del QR: https://cmms.red528.com.ar/?qr=${selectedAsset.qr_code_uuid}
+                </p>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-outline" onclick="openQrPrintModal([${selectedAsset.id}])">🖨️ Imprimir Etiqueta QR</button>
+              <button class="btn btn-red" onclick="switchTab('tickets')">🚨 Reportar Falla en este Equipo</button>
+              <button class="btn btn-green" onclick="switchTab('preventive')">📋 Ejecutar Checklist Preventivo</button>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h3 style="font-size:15px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
+                1. Datos Técnicos del Equipo
+              </h3>
+              <div style="font-size:13px;display:grid;gap:8px;margin-bottom:14px;">
+                <div><b>Tipo de Equipo:</b> ${selectedAsset.type}</div>
+                <div><b>Estado Actual:</b> <span class="badge ${selectedAsset.status === 'operativo' ? 'badge-green' : 'badge-red'}">${selectedAsset.status}</span></div>
+                <div><b>Capacidad Frigorífica:</b> ${selectedAsset.capacity_kcal_fg} kcal/fg</div>
+                <div><b>Gas Refrigerante:</b> ${selectedAsset.refrigerant_type}</div>
+                <div><b>Alimentación Eléctrica:</b> ${selectedAsset.power_supply}</div>
+                <div><b>Fecha Instalación:</b> ${selectedAsset.installation_date}</div>
+                <div><b>Vencimiento Garantía:</b> ${selectedAsset.warranty_expiration}</div>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;margin-bottom:6px;">
+                Atributos Extendidos (JSONB technical_specs)
+              </div>
+              <pre class="json-box mono">${JSON.stringify(selectedAsset.technical_specs, null, 2)}</pre>
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:15px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
+                2. Historial de Fallas / Tickets (${assetTickets.length})
+              </h3>
+              ${assetTickets.length === 0 ? `<p style="font-size:13px;color:var(--slate-500);">Sin fallas registradas para este equipo.</p>` : assetTickets.map((t) => `
+                <div style="padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;margin-bottom:10px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <strong class="mono" style="color:var(--blue-700);">${t.ticket_number}</strong>
+                    <span class="badge ${t.status === 'resuelto' ? 'badge-green' : 'badge-amber'}">${t.status}</span>
+                  </div>
+                  <div style="font-weight:700;margin-bottom:4px;">${t.failure_symptom}</div>
+                  <div style="color:var(--slate-600);margin-bottom:6px;">${t.description}</div>
+                  <div style="font-size:11px;color:var(--slate-500);">📅 Reportado: ${t.reported_at} • 👷 ${t.technician}</div>
+                  ${t.resolution_comment ? `<div style="margin-top:6px;padding:8px;background:var(--emerald-50);border-radius:6px;color:#065f46;"><b>Solución:</b> ${t.resolution_comment}</div>` : `
+                    <button class="btn btn-green" style="margin-top:8px;width:100%;" onclick="resolveTicket(${t.id})">✅ Marcar Ticket como Resuelto</button>
+                  `}
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:15px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
+                3. Historial de Mantenimientos Preventivos (${assetPreventives.length})
+              </h3>
+              ${assetPreventives.length === 0 ? `
+                <p style="font-size:13px;color:var(--slate-500);margin-bottom:10px;">Aún no hay preventivos cargados en este activo.</p>
+                <button class="btn btn-green" onclick="switchTab('preventive')">+ Ejecutar Checklist Preventivo</button>
+              ` : assetPreventives.map((p) => `
+                <div style="padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;margin-bottom:10px;font-size:12px;">
+                  <div style="font-weight:700;color:#065f46;margin-bottom:4px;">${p.plan_name}</div>
+                  <div style="font-size:11px;color:var(--slate-500);margin-bottom:6px;">📅 ${p.executed_at} • 👷 ${p.technician}</div>
+                  <div style="margin-bottom:6px;">${p.observations}</div>
+                  <pre class="json-box mono" style="font-size:11px;padding:8px;">${JSON.stringify(p.results)}</pre>
+                  <div style="font-size:11px;color:var(--slate-600);margin-top:6px;">✍️ ${p.signature}</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "tickets") {
+        container.innerHTML = `
+          <div class="grid-2-1">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <h2 style="font-size:19px;">🛠️ Bandeja de Solicitudes de Mantenimiento (${tickets.length})</h2>
+              ${tickets.map((t) => {
+                const asset = assets.find((a) => a.id === t.asset_id) || assets[0];
+                return `
+                  <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                      <div>
+                        <span class="mono badge badge-blue">${t.ticket_number}</span>
+                        <span class="badge ${t.status === 'resuelto' ? 'badge-green' : 'badge-amber'}">${t.status}</span>
+                      </div>
+                      <button class="btn btn-outline" onclick="scanAssetQr(${asset.id})">🔍 Ver Equipo ${asset.tag_code}</button>
+                    </div>
+                    <h4 style="font-size:15px;">${t.failure_symptom}</h4>
+                    <p style="font-size:13px;color:var(--slate-600);margin:4px 0 8px;">${t.description}</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--slate-500);border-top:1px solid var(--border);padding-top:8px;">
+                      <span>Reportado: ${t.reported_at} • Técnico: <b>${t.technician}</b></span>
+                      ${t.status !== "resuelto" ? `<button class="btn btn-green" onclick="resolveTicket(${t.id})">✅ Resolver Ticket</button>` : `<span>Resuelto ✅</span>`}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <form class="card" style="height:fit-content;" onsubmit="handleCreateTicket(event)">
+              <h3 style="font-size:16px;margin-bottom:12px;">🚨 Reportar Nueva Falla en Equipo HVAC</h3>
+              <div style="display:grid;gap:10px;">
+                <div>
+                  <label>Equipo de Aire Acondicionado</label>
+                  <select id="tk_asset" class="input">
+                    ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — ${a.brand} ${a.model}</option>`).join("")}
+                  </select>
+                </div>
+                <div>
+                  <label>Síntoma Estandarizado</label>
+                  <select id="tk_symptom" class="input">
+                    <option>No enfría / Compresor no acopla</option>
+                    <option>Pérdida de agua / Goteo interior</option>
+                    <option>Salta térmica / Disyuntor en tablero</option>
+                    <option>Ruido anormal en turbina o compresor</option>
+                    <option>Error en display / Placa electrónica</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Prioridad SLA</label>
+                  <select id="tk_priority" class="input">
+                    <option value="critica">Crítica (SLA 4 hs)</option>
+                    <option value="alta" selected>Alta (SLA 8 hs)</option>
+                    <option value="media">Media (SLA 24 hs)</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Descripción / Detalle</label>
+                  <textarea id="tk_desc" rows="3" class="input" placeholder="Ej: El equipo gotea sobre la caja N° 2..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-red" style="padding:10px;">Emitir Ticket y Asociar al Equipo</button>
+              </div>
+            </form>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "preventive") {
+        container.innerHTML = `
+          <form class="card" style="max-width:760px;margin:0 auto;" onsubmit="handleSavePreventive(event)">
+            <span class="badge badge-green">Módulo 3 • Mantenimiento Preventivo</span>
+            <h2 style="font-size:19px;margin:6px 0 14px;">📋 Ejecución de Checklist Preventivo Dinámico y Firma</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+              <div>
+                <label>Equipo HVAC Objetivo</label>
+                <select id="pv_asset" class="input">
+                  ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — ${a.brand} ${a.model}</option>`).join("")}
+                </select>
+              </div>
+              <div>
+                <label>Frecuencia Plan</label>
+                <input class="input" value="Preventivo Mensual / Trimestral ISO 55000" readonly />
+              </div>
+              <div>
+                <label>Paso 1: Presión de Succión Medida (PSI)</label>
+                <input id="pv_psi" type="number" class="input mono" value="118" />
+              </div>
+              <div>
+                <label>Paso 2: Corriente de Trabajo Compresor (Amperes)</label>
+                <input id="pv_amp" type="number" step="0.1" class="input mono" value="14.2" />
+              </div>
+              <div style="grid-column:1 / -1;">
+                <label>Observaciones Técnicas</label>
+                <textarea id="pv_obs" rows="2" class="input" placeholder="Filtros G4 limpios, bandeja de condensado desobstruida..."></textarea>
+              </div>
+              <div style="grid-column:1 / -1;">
+                <label>Firma de Conformidad (Encargado de Local)</label>
+                <input id="pv_sig" class="input" value="Firmado en conformidad — Sofía Peralta (Encargada Local)" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-green" style="width:100%;padding:11px;">✍️ Firmar y Guardar en Historial del Equipo</button>
+          </form>
+        `;
+        return;
+      }
+
+      if (currentTab === "kpis") {
+        container.innerHTML = `
+          <div class="grid-4" style="margin-bottom:20px;">
+            <div class="card"><b>MTTR Promedio:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">3.75 hs</div></div>
+            <div class="card"><b>MTBF Parque HVAC:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">958.4 hs</div></div>
+            <div class="card"><b>Disponibilidad Técnica:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">94.8%</div></div>
+            <div class="card"><b>Cumplimiento SLA:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">92.4%</div></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:16px;margin-bottom:10px;">Distribución de los 528 Locales por Región</h3>
+            <p style="font-size:13px;color:var(--slate-600);">• <b>CABA:</b> 168 locales (Zonas 1 y 2) — SLA 94.2%</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>GBA:</b> 210 locales (Zonas 3, 4 y 5) — SLA 91.8%</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>Interior:</b> 150 locales (Zonas 6, 7 y 8) — SLA 89.5%</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentTab === "mobile") {
+        container.innerHTML = `
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <div>
+                <div style="background:${isOffline ? '#d97706' : '#1d4ed8'};color:#fff;padding:12px 16px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;">
+                  <span>📱 CMMS App Campo</span>
+                  <span>${isOffline ? '⚡ SIN SEÑAL (OFFLINE)' : '📶 5G ONLINE'}</span>
+                </div>
+                <div style="padding:16px;">
+                  <div style="font-size:12px;font-weight:700;margin-bottom:8px;">
+                    📷 Tocá la etiqueta QR de un Aire Acondicionado para escanearlo y abrir sus Datos e Historial:
+                  </div>
+                  <div style="display:grid;gap:8px;">
+                    ${assets.map((a) => `
+                      <button class="btn btn-outline" style="justify-content:space-between;padding:10px;" onclick="scanAssetQr(${a.id})">
+                        <span class="mono" style="color:var(--blue-700);font-weight:800;">📷 ${a.tag_code}</span>
+                        <span>${a.brand} →</span>
+                      </button>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+              <div style="padding:14px;background:#0f172a;color:#fff;font-size:12px;">
+                Cola de Sincronización Offline: <b>${offlineQueue.length}</b> registro(s)
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const qr = params.get("qr");
+      if (qr) {
+        const found = assets.find((a) => a.qr_code_uuid.toLowerCase() === qr.toLowerCase() || a.tag_code.toLowerCase() === qr.toLowerCase());
+        if (found) {
+          selectedAssetId = found.id;
+          currentTab = "asset_360";
+        }
+      }
+      render();
+    });
+  </script>
+</body>
+</html>
