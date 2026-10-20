@@ -360,8 +360,27 @@
     let currentTab = "home";
     let isOffline = false;
     let offlineQueue = [];
-    let fbProjectId = localStorage.getItem("cmms_fb_project_id") || "";
+    let fbProjectId = localStorage.getItem("cmms_fb_project_id") || "cmms-red-express-locales";
     let fbApiKey = localStorage.getItem("cmms_fb_api_key") || "";
+
+    const users = [
+      { id: 1, full_name: "Ing. Martín Echeverría", email: "mecheverria@redretail.com.ar", role: "admin", is_active: true },
+      { id: 2, full_name: "Ing. Laura Gómez", email: "lgomez@redretail.com.ar", role: "jefe_mantenimiento", is_active: true },
+      { id: 3, full_name: "Carlos Rodríguez", email: "crodriguez@clima-service.com.ar", role: "tecnico", is_active: true },
+      { id: 6, full_name: "Sofía Peralta", email: "encargado.001@redretail.com.ar", role: "encargado_local", is_active: true }
+    ];
+
+    const assetCategories = [
+      { id: 1, code: "HVAC", name: "Climatización y Aire Acondicionado (Fase 1 Activa)" },
+      { id: 2, code: "REFRIG", name: "Frío Alimentario y Comercial (Fase 2 Preparado en BD)" }
+    ];
+
+    const assetTypes = [
+      { id: 1, category_id: 1, name: "Split Muro" },
+      { id: 2, category_id: 1, name: "Piso-Techo" },
+      { id: 3, category_id: 1, name: "Rooftop" },
+      { id: 4, category_id: 1, name: "Cortina de Aire" }
+    ];
 
     const zones = [
       { id: 1, name: "CABA Centro y Corredor Norte", region: "CABA" },
@@ -587,6 +606,9 @@
       closeNewAssetModal();
       switchTab("assets");
       openQrPrintModal([created.id]);
+      if (fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "assets", created.tag_code, created).catch(() => {});
+      }
       showToast(`Aire acondicionado ${created.tag_code} cargado y etiqueta QR generada.`);
     }
 
@@ -639,6 +661,9 @@
       const t = tickets.find((x) => x.id === ticketId);
       if (t) {
         assets = assets.map((a) => a.id === t.asset_id ? { ...a, status: "operativo" } : a);
+        if (fbProjectId && !isOffline) {
+          writeFirestoreDoc(fbProjectId, fbApiKey, "maintenance_requests", t.ticket_number, t).catch(() => {});
+        }
       }
       showToast("Ticket resuelto e incorporado al historial del equipo.");
       render();
@@ -653,7 +678,7 @@
       const asset = assets.find((a) => a.id === assetId) || assets[0];
       const nextNum = "TCK-2026-000" + (tickets.length + 3);
 
-      tickets.unshift({
+      const createdTicket = {
         id: tickets.length + 1,
         ticket_number: nextNum,
         store_id: asset.store_id,
@@ -666,11 +691,14 @@
         reported_at: "19/10/2026 15:25",
         resolved_at: null,
         resolution_comment: null
-      });
+      };
+      tickets.unshift(createdTicket);
 
       assets = assets.map((a) => a.id === asset.id ? { ...a, status: "con_falla" } : a);
       if (isOffline) {
         offlineQueue.unshift({ id: generateUuid(), label: `Ticket ${nextNum} en ${asset.tag_code}` });
+      } else if (fbProjectId) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "maintenance_requests", createdTicket.ticket_number, createdTicket).catch(() => {});
       }
       showToast(`Ticket ${nextNum} creado y vinculado al historial de ${asset.tag_code}.`);
       render();
@@ -684,7 +712,7 @@
       const obs = document.getElementById("pv_obs").value || "Checklist preventivo completado conforme a protocolo ISO 55000.";
       const sig = document.getElementById("pv_sig").value || "Firmado en conformidad por Encargado de Tienda";
 
-      preventives.unshift({
+      const createdExec = {
         id: preventives.length + 1,
         asset_id: assetId,
         plan_id: 1,
@@ -695,8 +723,12 @@
         results: { filtros_limpios: true, drenaje_ok: true, presion_baja_psi: psi, corriente_amp: amp },
         signature: sig,
         sync_offline_id: generateUuid()
-      });
+      };
+      preventives.unshift(createdExec);
 
+      if (fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "preventive_executions", "exec_" + createdExec.id, createdExec).catch(() => {});
+      }
       selectedAssetId = assetId;
       showToast("Ejecución preventiva firmada y agregada a la Hoja de Vida del equipo.");
       switchTab("asset_360");
@@ -722,6 +754,36 @@
       return fields;
     }
 
+    async function writeFirestoreDoc(projectId, apiKey, collectionName, docId, dataObj) {
+      const baseUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
+      const keyParam = apiKey ? `?key=${encodeURIComponent(apiKey)}` : "";
+      const url = `${baseUrl}/${encodeURIComponent(collectionName)}/${encodeURIComponent(String(docId))}${keyParam}`;
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: toFirestoreFields(dataObj) })
+      });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          if (errJson && errJson.error && errJson.error.message) {
+            detail = `${res.status} - ${errJson.error.message}`;
+          }
+        } catch (e) {}
+        const err = new Error(detail);
+        err.status = res.status;
+        throw err;
+      }
+      return res.json();
+    }
+
+    function copyFirestoreRulesSnippet() {
+      const rulesText = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`;
+      navigator.clipboard.writeText(rulesText);
+      showToast("Reglas copiadas al portapapeles. Pegalas en la pestaña 'Reglas' de Firebase y hacé clic en Publicar.");
+    }
+
     async function seedCloudFirestoreFromBrowser(e) {
       e.preventDefault();
       const projectId = document.getElementById("fb_project_id").value.trim();
@@ -736,57 +798,79 @@
       fbApiKey = apiKey;
 
       const statusBox = document.getElementById("fbSeedStatus");
-      statusBox.innerHTML = "⏳ Conectando con Cloud Firestore y creando colecciones (zones, stores, assets, maintenance_requests, preventive_executions)...";
-
-      const baseUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
-      const keyParam = apiKey ? `?key=${encodeURIComponent(apiKey)}` : "";
+      statusBox.style.background = "#eff6ff";
+      statusBox.style.borderColor = "#93c5fd";
+      statusBox.innerHTML = "⏳ Conectando con Cloud Firestore (<b>" + projectId + "</b>) y escribiendo colecciones...";
 
       try {
         let count = 0;
         for (const z of zones) {
-          await fetch(`${baseUrl}/zones/${z.id}${keyParam ? keyParam + "&" : "?"}documentId=zone_${z.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toFirestoreFields(z) })
-          });
+          await writeFirestoreDoc(projectId, apiKey, "zones", "zone_" + z.id, z);
           count++;
         }
         for (const s of stores) {
-          await fetch(`${baseUrl}/stores/${s.code}${keyParam}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toFirestoreFields(s) })
-          });
+          await writeFirestoreDoc(projectId, apiKey, "stores", s.code, s);
+          count++;
+        }
+        for (const u of users) {
+          await writeFirestoreDoc(projectId, apiKey, "users", "user_" + u.id, u);
+          count++;
+        }
+        for (const c of assetCategories) {
+          await writeFirestoreDoc(projectId, apiKey, "asset_categories", c.code, c);
+          count++;
+        }
+        for (const at of assetTypes) {
+          await writeFirestoreDoc(projectId, apiKey, "asset_types", "type_" + at.id, at);
           count++;
         }
         for (const a of assets) {
-          await fetch(`${baseUrl}/assets/${a.tag_code}${keyParam}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toFirestoreFields(a) })
-          });
+          await writeFirestoreDoc(projectId, apiKey, "assets", a.tag_code, a);
           count++;
         }
         for (const t of tickets) {
-          await fetch(`${baseUrl}/maintenance_requests/${t.ticket_number}${keyParam}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toFirestoreFields(t) })
-          });
+          await writeFirestoreDoc(projectId, apiKey, "maintenance_requests", t.ticket_number, t);
           count++;
         }
         for (const p of preventives) {
-          await fetch(`${baseUrl}/preventive_executions/exec_${p.id}${keyParam}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toFirestoreFields(p) })
-          });
+          await writeFirestoreDoc(projectId, apiKey, "preventive_executions", "exec_" + p.id, p);
           count++;
         }
-        statusBox.innerHTML = `✅ <b>¡Base de datos Cloud Firestore poblada con éxito!</b> Se crearon/actualizaron <b>${count} documentos</b> en las colecciones <code>zones</code>, <code>stores</code>, <code>assets</code>, <code>maintenance_requests</code> y <code>preventive_executions</code> del proyecto <code>${projectId}</code>.`;
+        statusBox.style.background = "#ecfdf5";
+        statusBox.style.borderColor = "#6ee7b7";
+        statusBox.innerHTML = `✅ <b>¡Datos ingresados correctamente en Firebase Cloud Firestore!</b><br/>Se crearon <b>${count} documentos</b> en las 8 colecciones (<code>zones</code>, <code>stores</code>, <code>users</code>, <code>asset_categories</code>, <code>asset_types</code>, <code>assets</code>, <code>maintenance_requests</code> y <code>preventive_executions</code>).<br/><br/>👉 <a href="https://console.firebase.google.com/project/${projectId}/firestore/databases/-default-/data" target="_blank" style="color:#059669;font-weight:800;text-decoration:underline;">Abrir Consola de Datos de Firestore (${projectId}) para ver las colecciones →</a>`;
         showToast(`¡${count} documentos creados en Cloud Firestore (${projectId})!`);
       } catch (err) {
-        statusBox.innerHTML = `⚠️ Error de red o permisos al conectar con Firestore: ${err.message}. Verificá que hayas creado la base de datos Firestore en la consola de Firebase.`;
+        statusBox.style.background = "#fef2f2";
+        statusBox.style.borderColor = "#fecaca";
+        if (err.status === 403) {
+          statusBox.innerHTML = `
+            <div style="color:#991b1b;space-y:8px;">
+              <b>🔒 Firebase rechazó la escritura con código 403 (Permiso Denegado / Reglas bloqueadas)</b>
+              <p style="margin-top:6px;">Tu base de datos <code>${projectId}</code> existe, pero tiene las <b>Reglas de Seguridad (Rules)</b> bloqueadas en modo producción (<code>allow read, write: if false;</code>).</p>
+              <div style="margin-top:10px;padding:10px;background:#fff;border:1px solid #fca5a5;border-radius:8px;color:#0f172a;">
+                <b>Solucionalo en 15 segundos:</b>
+                <ol style="margin-left:18px;margin-top:6px;line-height:1.6;">
+                  <li>Hacé clic acá para abrir las reglas de tu proyecto: <a href="https://console.firebase.google.com/project/${projectId}/firestore/databases/-default-/rules" target="_blank" style="color:#2563eb;font-weight:800;text-decoration:underline;">Abrir Pestaña "Reglas" en Firebase (${projectId}) →</a></li>
+                  <li>Reemplazá el texto por este bloque (o tocá el botón para copiarlo) y apretá el botón <b>"Publicar" (Publish)</b>:</li>
+                </ol>
+                <pre class="json-box mono" style="margin-top:8px;font-size:11px;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+                <button type="button" class="btn btn-blue" style="margin-top:8px;" onclick="copyFirestoreRulesSnippet()">📋 Copiar estas Reglas</button>
+              </div>
+              <p style="margin-top:8px;font-weight:700;">Una vez que apretes "Publicar" en Firebase, volvé a tocar el botón naranja de arriba y los datos ingresarán al instante.</p>
+            </div>
+          `;
+        } else {
+          statusBox.innerHTML = `⚠️ Error al conectar con Firestore (<b>${err.message}</b>). Verificá que hayas creado la base de datos en <a href="https://console.firebase.google.com/project/${projectId}/firestore" target="_blank" style="color:#dc2626;font-weight:700;">Firestore Database (${projectId})</a>.`;
+        }
+        showToast("Error 403: Habilitá las Reglas en la consola de Firebase.");
       }
     }
 
