@@ -548,6 +548,9 @@ export default function CMMSPlatformPage() {
   );
 
   const pendingOfflineCount = offlineQueue.filter((i) => !i.synced).length;
+  const canCreateOrEditAssets =
+    currentUser.role === "admin" || currentUser.role === "jefe_mantenimiento";
+  const canModifyFirestoreDb = currentUser.role === "admin";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900">
@@ -687,15 +690,25 @@ export default function CMMSPlatformPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2.5">
-                <button
-                  onClick={() => {
-                    setShowNewAssetModal(true);
-                    setActiveTab("assets");
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow"
-                >
-                  + Cargar Aire Acondicionado y Generar QR
-                </button>
+                {canCreateOrEditAssets && (
+                  <button
+                    onClick={() => {
+                      setShowNewAssetModal(true);
+                      setActiveTab("assets");
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow"
+                  >
+                    + Cargar Aire Acondicionado y Generar QR
+                  </button>
+                )}
+                {canModifyFirestoreDb && (
+                  <button
+                    onClick={() => setActiveTab("db_architecture")}
+                    className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow"
+                  >
+                    🔥 Administrar BD Firestore (Solo Admin)
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveTab("tickets")}
                   className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow"
@@ -929,12 +942,18 @@ export default function CMMSPlatformPage() {
                 >
                   🖨️ Imprimir Plancha QR ({filteredAssets.length} equipos)
                 </button>
-                <button
-                  onClick={() => setShowNewAssetModal(true)}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition"
-                >
-                  + Cargar Nuevo Aire Acondicionado (Genera QR)
-                </button>
+                {canCreateOrEditAssets ? (
+                  <button
+                    onClick={() => setShowNewAssetModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition"
+                  >
+                    + Cargar Nuevo Aire Acondicionado (Genera QR)
+                  </button>
+                ) : (
+                  <span className="px-3 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
+                    🔒 Rol Técnico: Sin permiso para cargar equipos
+                  </span>
+                )}
               </div>
             </div>
 

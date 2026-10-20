@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fracttal-AR CMMS / GMAO | Red 528 Locales — Pantalla Inicial + Firebase</title>
+  <title>Fracttal-AR CMMS / GMAO | Red 528 Locales — Vistas por Rol (Admin, Jefe Mto, Técnico)</title>
   <style>
     :root {
       --bg: #f1f5f9;
@@ -23,6 +23,8 @@
       --red-50: #fef2f2;
       --amber-600: #d97706;
       --amber-50: #fffbeb;
+      --purple-600: #7c3aed;
+      --purple-50: #f5f3ff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -40,9 +42,63 @@
       border-bottom: 1px solid var(--slate-800);
     }
     .container {
-      max-width: 1260px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 0 16px;
+    }
+    /* Barra Superior de Selector de Pantallas por Rol (RBAC) */
+    .role-switcher-bar {
+      background: #020617;
+      border-bottom: 1px solid #1e293b;
+      padding: 8px 0;
+    }
+    .role-switcher-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .role-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .role-pill {
+      background: #0f172a;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .role-pill:hover {
+      color: #fff;
+      border-color: #64748b;
+    }
+    .role-pill.active-admin {
+      background: #1e3a8a;
+      color: #fff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+    }
+    .role-pill.active-jefe {
+      background: #4c1d95;
+      color: #fff;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 2px rgba(139,92,246,0.3);
+    }
+    .role-pill.active-tecnico {
+      background: #064e3b;
+      color: #fff;
+      border-color: #10b981;
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
     }
     .topbar {
       display: flex;
@@ -79,6 +135,7 @@
     .badge-green { background: var(--emerald-50); color: var(--emerald-600); border: 1px solid #a7f3d0; }
     .badge-red { background: var(--red-50); color: var(--red-600); border: 1px solid #fecaca; }
     .badge-amber { background: var(--amber-50); color: var(--amber-600); border: 1px solid #fde68a; }
+    .badge-purple { background: var(--purple-50); color: var(--purple-600); border: 1px solid #ddd6fe; }
     .nav-tabs {
       display: flex;
       gap: 4px;
@@ -105,7 +162,7 @@
       color: #60a5fa;
       border-bottom-color: #3b82f6;
     }
-    main { padding: 24px 0 48px; }
+    main { padding: 20px 0 48px; }
     .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; }
     .grid-2-1 { display: grid; grid-template-columns: 1.85fr 1.15fr; gap: 20px; }
@@ -132,6 +189,23 @@
       gap: 18px;
       margin-bottom: 20px;
     }
+    .hero-jefe {
+      background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 60%, #0f172a 100%);
+    }
+    .hero-tecnico {
+      background: linear-gradient(135deg, #064e3b 0%, #047857 60%, #0f172a 100%);
+    }
+    .privilege-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      font-size: 12px;
+    }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -150,6 +224,7 @@
     .btn-green { background: var(--emerald-600); color: #fff; }
     .btn-red { background: var(--red-600); color: #fff; }
     .btn-amber { background: var(--amber-600); color: #fff; }
+    .btn-purple { background: var(--purple-600); color: #fff; }
     .btn-dark { background: var(--slate-900); color: #fff; }
     .btn-outline { background: #fff; color: var(--slate-700); border-color: #cbd5e1; }
     .input, select, textarea {
@@ -228,58 +303,62 @@
   <div id="toast" class="toast"></div>
 
   <header>
+    <!-- BARRA SELECTORA DE LAS 3 PANTALLAS POR ROL Y PRIVILEGIOS -->
+    <div class="role-switcher-bar">
+      <div class="container role-switcher-inner">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1;">
+          <span>🔐 <b>Cambiar Pantalla / Perfil de Usuario (RBAC):</b></span>
+          <span id="cloudSyncIndicator" class="mono" style="font-size:11px;color:#38bdf8;">• Conectado a Firestore: cmms-red-express-locales</span>
+        </div>
+        <div class="role-pills">
+          <button id="roleBtn_admin" class="role-pill active-admin" onclick="switchRole('admin')">
+            🛡️ 1. Pantalla Administrador (Control Total + Base de Datos Firestore)
+          </button>
+          <button id="roleBtn_jefe_mantenimiento" class="role-pill" onclick="switchRole('jefe_mantenimiento')">
+            👔 2. Pantalla Jefe / Gerente Mantenimiento (Gestión Activos + QR • Sin Base de Datos)
+          </button>
+          <button id="roleBtn_tecnico" class="role-pill" onclick="switchRole('tecnico')">
+            🧰 3. Pantalla Técnico de Campo (Escáner QR + Tickets + Preventivo • Sin Carga de Equipos)
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="container">
       <div class="topbar">
         <div class="brand">
-          <div class="brand-icon">❄️</div>
+          <div class="brand-icon" id="brandRoleIcon">🛡️</div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <strong style="font-size:17px;">Fracttal-AR CMMS / GMAO</strong>
-              <span class="badge badge-blue">Red 528 Locales • Fase 1 HVAC</span>
+              <span id="roleHeaderBadge" class="badge badge-blue">VISTA ADMINISTRADOR</span>
             </div>
-            <div style="font-size:12px;color:#94a3b8;">
-              Climatización Activa • Etiquetado QR por Activo + Cloud Firestore Offline-First
+            <div id="roleHeaderSubtitle" style="font-size:12px;color:#94a3b8;">
+              Usuario activo: Ing. Martín Echeverría (admin) • Acceso total a Activos HVAC, QR y Base de Datos Firestore
             </div>
           </div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button id="offlineToggleBtn" class="btn btn-green" onclick="toggleOfflineMode()">
-            📶 ONLINE • Firestore Sync
-          </button>
-          <button class="btn btn-amber" onclick="switchTab('firebase')">
-            🔥 Conectar Firebase Firestore
-          </button>
-          <button class="btn btn-blue" onclick="openNewAssetModal()">
-            + Cargar Aire Acondicionado (Genera QR)
-          </button>
-        </div>
+        <div id="topActionButtons" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"></div>
       </div>
 
-      <nav class="nav-tabs" id="navTabs">
-        <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">🏠 Pantalla Inicial</button>
-        <button class="tab-btn" data-tab="assets" onclick="switchTab('assets')">🏢 1. Activos HVAC & Generador QR</button>
-        <button class="tab-btn" data-tab="asset_360" onclick="switchTab('asset_360')">🔍 Hoja de Vida al Escanear QR</button>
-        <button class="tab-btn" data-tab="tickets" onclick="switchTab('tickets')">🛠️ 2. Solicitudes / Tickets</button>
-        <button class="tab-btn" data-tab="preventive" onclick="switchTab('preventive')">📋 3. Checklists Preventivos & Firma</button>
-        <button class="tab-btn" data-tab="kpis" onclick="switchTab('kpis')">📊 4. KPIs (MTTR / MTBF / SLA)</button>
-        <button class="tab-btn" data-tab="mobile" onclick="switchTab('mobile')">📱 5. App Móvil Offline + Escáner QR</button>
-        <button class="tab-btn" data-tab="firebase" onclick="switchTab('firebase')">🔥 Firebase & GitHub</button>
-      </nav>
+      <nav class="nav-tabs" id="navTabs"></nav>
     </div>
   </header>
 
   <main class="container">
+    <div id="privilegeBanner"></div>
     <div id="appContent"></div>
   </main>
 
-  <!-- MODAL ALTA DE ACTIVO HVAC -->
+  <!-- MODAL ALTA DE ACTIVO HVAC (Solo Admin y Jefe de Mantenimiento) -->
   <div id="newAssetModal" class="modal-backdrop">
     <div class="modal">
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
         <div>
-          <h3 style="font-size:17px;">Cargar Nuevo Aire Acondicionado (Genera Código QR Único)</h3>
-          <p style="font-size:12px;color:var(--slate-500);">Al guardar se asigna su UUID y se genera su etiqueta autoadhesiva QR vinculada a su Hoja de Vida.</p>
+          <span class="badge badge-blue">Permiso requerido: Administrador o Jefe de Mantenimiento</span>
+          <h3 style="font-size:17px;margin-top:4px;">Cargar Nuevo Aire Acondicionado (Genera Código QR Único)</h3>
+          <p style="font-size:12px;color:var(--slate-500);">Al guardar se asigna su UUID, se sincroniza en Firestore y se genera su etiqueta QR vinculada a su Hoja de Vida.</p>
         </div>
         <button class="btn btn-outline" onclick="closeNewAssetModal()">✕</button>
       </div>
@@ -339,6 +418,60 @@
     </div>
   </div>
 
+  <!-- MODAL GESTIÓN / EDICIÓN DE ACTIVO HVAC (Solo Admin y Jefe de Mantenimiento) -->
+  <div id="editAssetModal" class="modal-backdrop">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
+        <div>
+          <span class="badge badge-purple">Gestión de Activos HVAC • Admin / Jefe de Mantenimiento</span>
+          <h3 id="editAssetModalTitle" style="font-size:17px;margin-top:4px;">Editar Parámetros del Activo</h3>
+        </div>
+        <button class="btn btn-outline" onclick="closeEditAssetModal()">✕</button>
+      </div>
+      <form onsubmit="handleUpdateAsset(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <input type="hidden" id="ea_id" />
+        <div>
+          <label>Estado Operativo del Equipo</label>
+          <select id="ea_status" class="input">
+            <option value="operativo">operativo</option>
+            <option value="con_falla">con_falla</option>
+            <option value="en_reparacion">en_reparacion</option>
+            <option value="baja">baja</option>
+          </select>
+        </div>
+        <div>
+          <label>Criticidad ISO 55000</label>
+          <select id="ea_crit" class="input">
+            <option value="critica">critica (SLA 4 hs)</option>
+            <option value="alta">alta (SLA 8 hs)</option>
+            <option value="media">media (SLA 24 hs)</option>
+            <option value="baja">baja (SLA 48 hs)</option>
+          </select>
+        </div>
+        <div>
+          <label>Ubicación en la Tienda</label>
+          <input id="ea_loc" class="input" required />
+        </div>
+        <div>
+          <label>Capacidad Frigorífica (kcal/fg)</label>
+          <input id="ea_cap" type="number" class="input" required />
+        </div>
+        <div>
+          <label>Marca</label>
+          <input id="ea_brand" class="input" required />
+        </div>
+        <div>
+          <label>Modelo</label>
+          <input id="ea_model" class="input" required />
+        </div>
+        <div style="grid-column:1 / -1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="closeEditAssetModal()">Cancelar</button>
+          <button type="submit" class="btn btn-purple">Guardar Cambios del Activo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL IMPRESIÓN DE ETIQUETAS QR -->
   <div id="qrPrintModal" class="modal-backdrop">
     <div class="modal">
@@ -357,6 +490,55 @@
   </div>
 
   <script>
+    // ============================================================================
+    // DEFINICIÓN DE ROLES Y MATRIZ DE PRIVILEGIOS (RBAC)
+    // ============================================================================
+    const ROLE_PROFILES = {
+      admin: {
+        role: "admin",
+        title: "Pantalla Administrador General",
+        badgeText: "🛡️ VISTA ADMINISTRADOR (CONTROL TOTAL)",
+        badgeClass: "badge-blue",
+        icon: "🛡️",
+        userName: "Ing. Martín Echeverría",
+        userEmail: "mecheverria@redretail.com.ar",
+        canCreateOrEditAssets: true,     // Puede cargar y editar equipos HVAC y generar QR
+        canAssignTechnicians: true,      // Puede asignar técnicos y gestionar planes
+        canViewKpis: true,               // Puede ver KPIs gerenciales
+        canModifyFirestoreDb: true,      // EXCLUSIVO: Puede acceder y modificar la base de datos Firestore
+        description: "Acceso total: Puede cargar/editar equipos HVAC, generar códigos QR, gestionar tickets/preventivos y tiene acceso exclusivo a la configuración y escritura masiva de la base de datos Firebase Cloud Firestore."
+      },
+      jefe_mantenimiento: {
+        role: "jefe_mantenimiento",
+        title: "Pantalla Jefe / Gerente de Mantenimiento",
+        badgeText: "👔 VISTA JEFE / GERENTE DE MANTENIMIENTO",
+        badgeClass: "badge-purple",
+        icon: "👔",
+        userName: "Ing. Laura Gómez",
+        userEmail: "lgomez@redretail.com.ar",
+        canCreateOrEditAssets: true,     // SÍ puede cargar y gestionar activos HVAC y generar QR
+        canAssignTechnicians: true,      // SÍ puede asignar técnicos y gestionar tickets/planes
+        canViewKpis: true,               // SÍ puede ver KPIs (MTTR, MTBF, SLA)
+        canModifyFirestoreDb: false,     // RESTRINGIDO: NO tiene acceso a modificar/configurar la BD Firestore
+        description: "Gestión de Activos y Operaciones: Puede dar de alta nuevos aires acondicionados, editar activos existentes, imprimir etiquetas QR, asignar técnicos y auditar KPIs (MTTR/MTBF/SLA). NO tiene acceso a modificar ni administrar la base de datos Firestore."
+      },
+      tecnico: {
+        role: "tecnico",
+        title: "Pantalla Técnico de Campo",
+        badgeText: "🧰 VISTA TÉCNICO DE CAMPO",
+        badgeClass: "badge-green",
+        icon: "🧰",
+        userName: "Carlos Rodríguez (ClimaService S.R.L.)",
+        userEmail: "crodriguez@clima-service.com.ar",
+        canCreateOrEditAssets: false,    // RESTRINGIDO: Los técnicos NO pueden cargar ni editar equipos
+        canAssignTechnicians: false,     // Solo ejecuta sus tickets asignados
+        canViewKpis: false,              // Enfoque operativo de campo
+        canModifyFirestoreDb: false,     // RESTRINGIDO: Sin acceso a la BD Firestore
+        description: "Operación en Campo: Puede escanear códigos QR, consultar la Hoja de Vida 360° (ficha técnica e historial), iniciar/resolver tickets de falla y firmar checklists preventivos. NO puede cargar equipos nuevos ni modificar la base de datos Firestore."
+      }
+    };
+
+    let currentRole = "admin";
     let currentTab = "home";
     let isOffline = false;
     let offlineQueue = [];
@@ -367,6 +549,7 @@
       { id: 1, full_name: "Ing. Martín Echeverría", email: "mecheverria@redretail.com.ar", role: "admin", is_active: true },
       { id: 2, full_name: "Ing. Laura Gómez", email: "lgomez@redretail.com.ar", role: "jefe_mantenimiento", is_active: true },
       { id: 3, full_name: "Carlos Rodríguez", email: "crodriguez@clima-service.com.ar", role: "tecnico", is_active: true },
+      { id: 4, full_name: "Hernán Pereyra", email: "hpereyra@friosur-mto.com.ar", role: "tecnico", is_active: true },
       { id: 6, full_name: "Sofía Peralta", email: "encargado.001@redretail.com.ar", role: "encargado_local", is_active: true }
     ];
 
@@ -484,12 +667,143 @@
       });
     }
 
-    function showToast(msg) {
+    function showToast(msg, isError = false) {
       const el = document.getElementById("toast");
-      el.textContent = "✅ " + msg;
+      el.style.borderLeftColor = isError ? "#ef4444" : "#10b981";
+      el.textContent = (isError ? "⛔ " : "✅ ") + msg;
       el.style.display = "block";
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(() => { el.style.display = "none"; }, 4500);
+    }
+
+    // ============================================================================
+    // CAMBIO DE ROL / PANTALLA Y ENFORCEMENT DE PRIVILEGIOS
+    // ============================================================================
+    function switchRole(newRole) {
+      if (!ROLE_PROFILES[newRole]) return;
+      currentRole = newRole;
+      const profile = ROLE_PROFILES[currentRole];
+
+      // Si el nuevo rol no puede acceder a la pestaña actual, redirigir a Inicio
+      if (currentTab === "firebase" && !profile.canModifyFirestoreDb) {
+        currentTab = "home";
+      }
+      if (currentTab === "kpis" && !profile.canViewKpis) {
+        currentTab = "home";
+      }
+
+      // Actualizar botones selectores de rol
+      ["admin", "jefe_mantenimiento", "tecnico"].forEach((r) => {
+        const btn = document.getElementById("roleBtn_" + r);
+        if (!btn) return;
+        btn.className = "role-pill";
+        if (r === currentRole) {
+          if (r === "admin") btn.classList.add("active-admin");
+          if (r === "jefe_mantenimiento") btn.classList.add("active-jefe");
+          if (r === "tecnico") btn.classList.add("active-tecnico");
+        }
+      });
+
+      updateHeaderAndTabs();
+      render();
+      showToast(`Pantalla cambiada a: ${profile.title} (${profile.userName})`);
+    }
+
+    function updateHeaderAndTabs() {
+      const profile = ROLE_PROFILES[currentRole];
+      document.getElementById("brandRoleIcon").textContent = profile.icon;
+
+      const badgeEl = document.getElementById("roleHeaderBadge");
+      badgeEl.className = "badge " + profile.badgeClass;
+      badgeEl.textContent = profile.badgeText;
+
+      document.getElementById("roleHeaderSubtitle").textContent =
+        `Usuario activo: ${profile.userName} (${profile.role}) • ${
+          profile.canModifyFirestoreDb
+            ? "Control Total + Base de Datos Firestore"
+            : profile.canCreateOrEditAssets
+              ? "Gestión de Activos HVAC y QR habilitada • Sin acceso a BD Firestore"
+              : "Operación Técnica y Escaneo QR • Sin permiso para cargar equipos ni modificar BD"
+        }`;
+
+      // Botones de acción superiores según privilegios del rol
+      const topActions = document.getElementById("topActionButtons");
+      let actionsHtml = `
+        <button id="offlineToggleBtn" class="btn ${isOffline ? 'btn-amber' : 'btn-green'}" onclick="toggleOfflineMode()">
+          ${isOffline ? `⚡ MODO OFFLINE CAMPO (${offlineQueue.length} en cola)` : '📶 ONLINE • Firestore Sync'}
+        </button>
+      `;
+
+      // Solo ADMIN ve el botón de Base de Datos Firebase Firestore
+      if (profile.canModifyFirestoreDb) {
+        actionsHtml += `
+          <button class="btn btn-amber" onclick="switchTab('firebase')">
+            🔥 Administrar BD Firestore
+          </button>
+        `;
+      }
+
+      // Solo ADMIN y JEFE DE MANTENIMIENTO pueden Cargar Aires Acondicionados
+      if (profile.canCreateOrEditAssets) {
+        actionsHtml += `
+          <button class="btn btn-blue" onclick="openNewAssetModal()">
+            + Cargar Aire Acondicionado (Genera QR)
+          </button>
+        `;
+      } else {
+        actionsHtml += `
+          <button class="btn btn-outline" style="background:#1e293b;color:#cbd5e1;border-color:#334155;" onclick="switchTab('mobile')">
+            📷 Abrir Escáner QR de Campo
+          </button>
+        `;
+      }
+      topActions.innerHTML = actionsHtml;
+
+      // Pestañas de navegación según privilegios del rol
+      const tabs = [
+        { id: "home", label: `🏠 Pantalla ${profile.role === 'admin' ? 'Administrador' : profile.role === 'jefe_mantenimiento' ? 'Jefe Mantenimiento' : 'Técnico'}` },
+        { id: "assets", label: profile.canCreateOrEditAssets ? "🏢 1. Gestión de Activos HVAC & QR" : "🏢 1. Consulta de Equipos HVAC" },
+        { id: "asset_360", label: "🔍 Hoja de Vida al Escanear QR" },
+        { id: "tickets", label: "🛠️ 2. Solicitudes / Tickets" },
+        { id: "preventive", label: "📋 3. Checklists Preventivos & Firma" }
+      ];
+
+      if (profile.canViewKpis) {
+        tabs.push({ id: "kpis", label: "📊 4. KPIs (MTTR / MTBF / SLA)" });
+      }
+      tabs.push({ id: "mobile", label: "📱 App Móvil Offline + Escáner QR" });
+
+      // EXCLUSIVO ADMINISTRADOR: Pestaña de Base de Datos Firestore
+      if (profile.canModifyFirestoreDb) {
+        tabs.push({ id: "firebase", label: "🔥 Base de Datos Firestore (Solo Admin)" });
+      }
+
+      const navEl = document.getElementById("navTabs");
+      navEl.innerHTML = tabs.map((t) => `
+        <button class="tab-btn ${currentTab === t.id ? 'active' : ''}" data-tab="${t.id}" onclick="switchTab('${t.id}')">
+          ${t.label}
+        </button>
+      `).join("");
+
+      // Banner explicativo de privilegios activos
+      const bannerEl = document.getElementById("privilegeBanner");
+      const bgMap = {
+        admin: "background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;",
+        jefe_mantenimiento: "background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95;",
+        tecnico: "background:#ecfdf5;border:1px solid #a7f3d0;color:#064e3b;"
+      };
+      bannerEl.innerHTML = `
+        <div class="privilege-banner" style="${bgMap[currentRole]}">
+          <div>
+            <strong>${profile.icon} ${profile.title}:</strong> ${profile.description}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-weight:700;">
+            <span>Cargar/Editar Equipos HVAC: ${profile.canCreateOrEditAssets ? '✅ PERMITIDO' : '🔒 BLOQUEADO'}</span>
+            <span>•</span>
+            <span>Modificar BD Firestore: ${profile.canModifyFirestoreDb ? '✅ PERMITIDO (ADMIN)' : '🔒 BLOQUEADO'}</span>
+          </div>
+        </div>
+      `;
     }
 
     function createQrSvgHtml(value, size = 92) {
@@ -542,24 +856,23 @@
 
     function toggleOfflineMode() {
       isOffline = !isOffline;
-      const btn = document.getElementById("offlineToggleBtn");
+      updateHeaderAndTabs();
       if (isOffline) {
-        btn.className = "btn btn-amber";
-        btn.textContent = `⚡ MODO OFFLINE CAMPO (${offlineQueue.length} en cola)`;
         showToast("Modo Offline activado: Las operaciones se guardan con sync_offline_id.");
       } else {
-        btn.className = "btn btn-green";
-        btn.textContent = "📶 ONLINE • Firestore Sync";
-        showToast("Conexión restablecida y sincronizada.");
+        showToast("Conexión restablecida y sincronizada con Firestore.");
       }
       render();
     }
 
     function switchTab(tabId) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (tabId === "firebase" && !profile.canModifyFirestoreDb) {
+        showToast("Acceso denegado: Solo el Administrador puede acceder a la configuración de la base de datos Firestore.", true);
+        return;
+      }
       currentTab = tabId;
-      document.querySelectorAll(".tab-btn").forEach((btn) => {
-        btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
-      });
+      updateHeaderAndTabs();
       render();
     }
 
@@ -572,15 +885,78 @@
       }
     }
 
+    // Guard de privilegios para Alta de Equipos HVAC
     function openNewAssetModal() {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado: El perfil Técnico no tiene privilegios para cargar nuevos equipos HVAC.", true);
+        return;
+      }
       document.getElementById("newAssetModal").style.display = "flex";
     }
     function closeNewAssetModal() {
       document.getElementById("newAssetModal").style.display = "none";
     }
 
+    // Guard de privilegios para Edición de Equipos HVAC (Admin y Jefe de Mantenimiento)
+    function openEditAssetModal(assetId) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado: Solo el Jefe de Mantenimiento o Administrador pueden editar activos.", true);
+        return;
+      }
+      const asset = assets.find((a) => a.id === Number(assetId));
+      if (!asset) return;
+      document.getElementById("ea_id").value = asset.id;
+      document.getElementById("ea_status").value = asset.status;
+      document.getElementById("ea_crit").value = asset.criticality;
+      document.getElementById("ea_loc").value = asset.location_in_store;
+      document.getElementById("ea_cap").value = asset.capacity_kcal_fg;
+      document.getElementById("ea_brand").value = asset.brand;
+      document.getElementById("ea_model").value = asset.model;
+      document.getElementById("editAssetModalTitle").textContent = `Gestionar Activo ${asset.tag_code}`;
+      document.getElementById("editAssetModal").style.display = "flex";
+    }
+    function closeEditAssetModal() {
+      document.getElementById("editAssetModal").style.display = "none";
+    }
+
+    function handleUpdateAsset(e) {
+      e.preventDefault();
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado para modificar activos.", true);
+        return;
+      }
+      const id = Number(document.getElementById("ea_id").value);
+      assets = assets.map((a) => {
+        if (a.id !== id) return a;
+        return {
+          ...a,
+          status: document.getElementById("ea_status").value,
+          criticality: document.getElementById("ea_crit").value,
+          location_in_store: document.getElementById("ea_loc").value,
+          capacity_kcal_fg: Number(document.getElementById("ea_cap").value),
+          brand: document.getElementById("ea_brand").value,
+          model: document.getElementById("ea_model").value
+        };
+      });
+      const updated = assets.find((a) => a.id === id);
+      closeEditAssetModal();
+      if (updated && fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "assets", updated.tag_code, updated).catch(() => {});
+      }
+      showToast(`Activo ${updated ? updated.tag_code : ''} actualizado por ${profile.userName}.`);
+      render();
+    }
+
     function handleCreateAsset(e) {
       e.preventDefault();
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado: Los técnicos no pueden cargar equipos.", true);
+        return;
+      }
       const created = {
         id: assets.length + 1,
         store_id: Number(document.getElementById("fa_store").value),
@@ -599,7 +975,7 @@
         power_supply: "220V / 380V",
         installation_date: "2026-10-19",
         warranty_expiration: "2028-10-19",
-        technical_specs: { consumo_nominal_amp: 7.4, norma: "ISO 55000 Fase 1" }
+        technical_specs: { consumo_nominal_amp: 7.4, norma: "ISO 55000 Fase 1", dado_de_alta_por: profile.userName }
       };
       assets.unshift(created);
       selectedAssetId = created.id;
@@ -609,7 +985,7 @@
       if (fbProjectId && !isOffline) {
         writeFirestoreDoc(fbProjectId, fbApiKey, "assets", created.tag_code, created).catch(() => {});
       }
-      showToast(`Aire acondicionado ${created.tag_code} cargado y etiqueta QR generada.`);
+      showToast(`Aire acondicionado ${created.tag_code} cargado por ${profile.userName} y etiqueta QR generada.`);
     }
 
     function openQrPrintModal(assetIds) {
@@ -648,14 +1024,48 @@
       document.getElementById("qrPrintModal").style.display = "none";
     }
 
+    function assignTechnicianToTicket(ticketId, techName) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canAssignTechnicians) {
+        showToast("Solo el Jefe de Mantenimiento o Administrador pueden reasignar técnicos.", true);
+        return;
+      }
+      tickets = tickets.map((t) => {
+        if (t.id !== ticketId) return t;
+        return { ...t, technician: techName, status: t.status === "abierto" ? "asignado" : t.status };
+      });
+      const t = tickets.find((x) => x.id === ticketId);
+      if (t && fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "maintenance_requests", t.ticket_number, t).catch(() => {});
+      }
+      showToast(`Técnico ${techName} asignado al ticket ${t ? t.ticket_number : ''}.`);
+      render();
+    }
+
+    function startTicketVisit(ticketId) {
+      tickets = tickets.map((t) => {
+        if (t.id !== ticketId) return t;
+        return { ...t, status: "en_visita", technician: "Carlos Rodríguez" };
+      });
+      const t = tickets.find((x) => x.id === ticketId);
+      if (t) {
+        assets = assets.map((a) => a.id === t.asset_id ? { ...a, status: "en_reparacion" } : a);
+        if (fbProjectId && !isOffline) {
+          writeFirestoreDoc(fbProjectId, fbApiKey, "maintenance_requests", t.ticket_number, t).catch(() => {});
+        }
+      }
+      showToast("Visita técnica iniciada en local. Estado del equipo: en_reparacion.");
+      render();
+    }
+
     function resolveTicket(ticketId) {
       tickets = tickets.map((t) => {
         if (t.id !== ticketId) return t;
         return {
           ...t,
           status: "resuelto",
-          resolved_at: "19/10/2026 15:25",
-          resolution_comment: "Reparación completada en visita técnica. Presiones y consumos eléctricos normalizados."
+          resolved_at: "19/10/2026 16:10",
+          resolution_comment: `Reparación completada por ${ROLE_PROFILES[currentRole].userName}. Presiones y consumos eléctricos normalizados.`
         };
       });
       const t = tickets.find((x) => x.id === ticketId);
@@ -687,8 +1097,8 @@
         priority: priority,
         description: desc,
         status: "abierto",
-        technician: "Pendiente de asignar",
-        reported_at: "19/10/2026 15:25",
+        technician: "Carlos Rodríguez",
+        reported_at: "19/10/2026 16:05",
         resolved_at: null,
         resolution_comment: null
       };
@@ -717,8 +1127,8 @@
         asset_id: assetId,
         plan_id: 1,
         plan_name: "Preventivo Programado HVAC (Limpieza + Control Eléctrico)",
-        executed_at: "19/10/2026 15:25",
-        technician: "Carlos Rodríguez",
+        executed_at: "19/10/2026 16:15",
+        technician: ROLE_PROFILES[currentRole].userName,
         observations: obs,
         results: { filtros_limpios: true, drenaje_ok: true, presion_baja_psi: psi, corriente_amp: amp },
         signature: sig,
@@ -726,7 +1136,9 @@
       };
       preventives.unshift(createdExec);
 
-      if (fbProjectId && !isOffline) {
+      if (isOffline) {
+        offlineQueue.unshift({ id: createdExec.sync_offline_id, label: `Checklist Preventivo #${createdExec.id}` });
+      } else if (fbProjectId) {
         writeFirestoreDoc(fbProjectId, fbApiKey, "preventive_executions", "exec_" + createdExec.id, createdExec).catch(() => {});
       }
       selectedAssetId = assetId;
@@ -734,7 +1146,9 @@
       switchTab("asset_360");
     }
 
-    // Conversión de objeto JS a formato Firestore REST API Value
+    // ============================================================================
+    // SINCRONIZACIÓN CON CLOUD FIRESTORE (LECTURA Y ESCRITURA REST)
+    // ============================================================================
     function toFirestoreFields(obj) {
       const fields = {};
       for (const [k, v] of Object.entries(obj)) {
@@ -752,6 +1166,52 @@
         }
       }
       return fields;
+    }
+
+    function fromFirestoreFields(fieldsObj) {
+      if (!fieldsObj) return {};
+      const out = {};
+      for (const [k, val] of Object.entries(fieldsObj)) {
+        if ("stringValue" in val) out[k] = val.stringValue;
+        else if ("integerValue" in val) out[k] = Number(val.integerValue);
+        else if ("doubleValue" in val) out[k] = Number(val.doubleValue);
+        else if ("booleanValue" in val) out[k] = Boolean(val.booleanValue);
+        else if ("nullValue" in val) out[k] = null;
+        else if ("mapValue" in val) out[k] = fromFirestoreFields(val.mapValue.fields || {});
+      }
+      return out;
+    }
+
+    async function loadFromCloudFirestore() {
+      if (!fbProjectId || isOffline) return;
+      try {
+        const baseUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(fbProjectId)}/databases/(default)/documents`;
+        const resAssets = await fetch(`${baseUrl}/assets`);
+        if (resAssets.ok) {
+          const data = await resAssets.json();
+          if (data.documents && data.documents.length > 0) {
+            const loadedAssets = data.documents.map((d) => fromFirestoreFields(d.fields)).filter((a) => a.tag_code);
+            if (loadedAssets.length > 0) {
+              assets = loadedAssets.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            }
+          }
+        }
+        const resTickets = await fetch(`${baseUrl}/maintenance_requests`);
+        if (resTickets.ok) {
+          const data = await resTickets.json();
+          if (data.documents && data.documents.length > 0) {
+            const loadedTickets = data.documents.map((d) => fromFirestoreFields(d.fields)).filter((t) => t.ticket_number);
+            if (loadedTickets.length > 0) {
+              tickets = loadedTickets.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+            }
+          }
+        }
+        const indicator = document.getElementById("cloudSyncIndicator");
+        if (indicator) {
+          indicator.textContent = `• Sincronizado en vivo con Firestore (${fbProjectId})`;
+        }
+        render();
+      } catch (e) {}
     }
 
     async function writeFirestoreDoc(projectId, apiKey, collectionName, docId, dataObj) {
@@ -781,15 +1241,21 @@
     function copyFirestoreRulesSnippet() {
       const rulesText = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`;
       navigator.clipboard.writeText(rulesText);
-      showToast("Reglas copiadas al portapapeles. Pegalas en la pestaña 'Reglas' de Firebase y hacé clic en Publicar.");
+      showToast("Reglas copiadas al portapapeles.");
     }
 
     async function seedCloudFirestoreFromBrowser(e) {
       e.preventDefault();
+      // Guard estricto: Solo el Administrador puede modificar masivamente la base de datos Firestore
+      if (!ROLE_PROFILES[currentRole].canModifyFirestoreDb) {
+        showToast("Acceso denegado: Solo el Administrador tiene privilegios para modificar la base de datos Firestore.", true);
+        return;
+      }
+
       const projectId = document.getElementById("fb_project_id").value.trim();
       const apiKey = document.getElementById("fb_api_key").value.trim();
       if (!projectId) {
-        showToast("Ingresá el Project ID de tu proyecto de Firebase.");
+        showToast("Ingresá el Project ID de tu proyecto de Firebase.", true);
         return;
       }
       localStorage.setItem("cmms_fb_project_id", projectId);
@@ -804,211 +1270,346 @@
 
       try {
         let count = 0;
-        for (const z of zones) {
-          await writeFirestoreDoc(projectId, apiKey, "zones", "zone_" + z.id, z);
-          count++;
-        }
-        for (const s of stores) {
-          await writeFirestoreDoc(projectId, apiKey, "stores", s.code, s);
-          count++;
-        }
-        for (const u of users) {
-          await writeFirestoreDoc(projectId, apiKey, "users", "user_" + u.id, u);
-          count++;
-        }
-        for (const c of assetCategories) {
-          await writeFirestoreDoc(projectId, apiKey, "asset_categories", c.code, c);
-          count++;
-        }
-        for (const at of assetTypes) {
-          await writeFirestoreDoc(projectId, apiKey, "asset_types", "type_" + at.id, at);
-          count++;
-        }
-        for (const a of assets) {
-          await writeFirestoreDoc(projectId, apiKey, "assets", a.tag_code, a);
-          count++;
-        }
-        for (const t of tickets) {
-          await writeFirestoreDoc(projectId, apiKey, "maintenance_requests", t.ticket_number, t);
-          count++;
-        }
-        for (const p of preventives) {
-          await writeFirestoreDoc(projectId, apiKey, "preventive_executions", "exec_" + p.id, p);
-          count++;
-        }
+        for (const z of zones) { await writeFirestoreDoc(projectId, apiKey, "zones", "zone_" + z.id, z); count++; }
+        for (const s of stores) { await writeFirestoreDoc(projectId, apiKey, "stores", s.code, s); count++; }
+        for (const u of users) { await writeFirestoreDoc(projectId, apiKey, "users", "user_" + u.id, u); count++; }
+        for (const c of assetCategories) { await writeFirestoreDoc(projectId, apiKey, "asset_categories", c.code, c); count++; }
+        for (const at of assetTypes) { await writeFirestoreDoc(projectId, apiKey, "asset_types", "type_" + at.id, at); count++; }
+        for (const a of assets) { await writeFirestoreDoc(projectId, apiKey, "assets", a.tag_code, a); count++; }
+        for (const t of tickets) { await writeFirestoreDoc(projectId, apiKey, "maintenance_requests", t.ticket_number, t); count++; }
+        for (const p of preventives) { await writeFirestoreDoc(projectId, apiKey, "preventive_executions", "exec_" + p.id, p); count++; }
+
         statusBox.style.background = "#ecfdf5";
         statusBox.style.borderColor = "#6ee7b7";
-        statusBox.innerHTML = `✅ <b>¡Datos ingresados correctamente en Firebase Cloud Firestore!</b><br/>Se crearon <b>${count} documentos</b> en las 8 colecciones (<code>zones</code>, <code>stores</code>, <code>users</code>, <code>asset_categories</code>, <code>asset_types</code>, <code>assets</code>, <code>maintenance_requests</code> y <code>preventive_executions</code>).<br/><br/>👉 <a href="https://console.firebase.google.com/project/${projectId}/firestore/databases/-default-/data" target="_blank" style="color:#059669;font-weight:800;text-decoration:underline;">Abrir Consola de Datos de Firestore (${projectId}) para ver las colecciones →</a>`;
-        showToast(`¡${count} documentos creados en Cloud Firestore (${projectId})!`);
+        statusBox.innerHTML = `✅ <b>¡Base de datos Firestore sincronizada por el Administrador!</b><br/>Se actualizaron <b>${count} documentos</b> en <code>${projectId}</code>.`;
+        showToast(`¡${count} documentos sincronizados en Cloud Firestore (${projectId})!`);
       } catch (err) {
         statusBox.style.background = "#fef2f2";
         statusBox.style.borderColor = "#fecaca";
-        if (err.status === 403) {
-          statusBox.innerHTML = `
-            <div style="color:#991b1b;space-y:8px;">
-              <b>🔒 Firebase rechazó la escritura con código 403 (Permiso Denegado / Reglas bloqueadas)</b>
-              <p style="margin-top:6px;">Tu base de datos <code>${projectId}</code> existe, pero tiene las <b>Reglas de Seguridad (Rules)</b> bloqueadas en modo producción (<code>allow read, write: if false;</code>).</p>
-              <div style="margin-top:10px;padding:10px;background:#fff;border:1px solid #fca5a5;border-radius:8px;color:#0f172a;">
-                <b>Solucionalo en 15 segundos:</b>
-                <ol style="margin-left:18px;margin-top:6px;line-height:1.6;">
-                  <li>Hacé clic acá para abrir las reglas de tu proyecto: <a href="https://console.firebase.google.com/project/${projectId}/firestore/databases/-default-/rules" target="_blank" style="color:#2563eb;font-weight:800;text-decoration:underline;">Abrir Pestaña "Reglas" en Firebase (${projectId}) →</a></li>
-                  <li>Reemplazá el texto por este bloque (o tocá el botón para copiarlo) y apretá el botón <b>"Publicar" (Publish)</b>:</li>
-                </ol>
-                <pre class="json-box mono" style="margin-top:8px;font-size:11px;">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}</pre>
-                <button type="button" class="btn btn-blue" style="margin-top:8px;" onclick="copyFirestoreRulesSnippet()">📋 Copiar estas Reglas</button>
-              </div>
-              <p style="margin-top:8px;font-weight:700;">Una vez que apretes "Publicar" en Firebase, volvé a tocar el botón naranja de arriba y los datos ingresarán al instante.</p>
-            </div>
-          `;
-        } else {
-          statusBox.innerHTML = `⚠️ Error al conectar con Firestore (<b>${err.message}</b>). Verificá que hayas creado la base de datos en <a href="https://console.firebase.google.com/project/${projectId}/firestore" target="_blank" style="color:#dc2626;font-weight:700;">Firestore Database (${projectId})</a>.`;
-        }
-        showToast("Error 403: Habilitá las Reglas en la consola de Firebase.");
+        statusBox.innerHTML = `⚠️ Error al conectar con Firestore (<b>${err.message}</b>).`;
+        showToast("Error al escribir en Firestore.", true);
       }
     }
 
+    // ============================================================================
+    // RENDERIZADO DINÁMICO SEGÚN LA PANTALLA / ROL ACTIVO
+    // ============================================================================
     function render() {
       const container = document.getElementById("appContent");
+      const profile = ROLE_PROFILES[currentRole];
       const selectedAsset = assets.find((a) => a.id === selectedAssetId) || assets[0];
       const openTicketsCount = tickets.filter((t) => t.status !== "resuelto").length;
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA INICIAL (DIFERENCIADA PARA ADMIN, JEFE DE MANTENIMIENTO Y TÉCNICO)
+      // --------------------------------------------------------------------------
       if (currentTab === "home") {
-        container.innerHTML = `
-          <div class="hero">
-            <div style="max-width:680px;">
-              <span class="badge badge-blue" style="margin-bottom:8px;">🏠 PANTALLA INICIAL • CENTRO DE CONTROL CMMS</span>
-              <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Sistema de Mantenimiento Climatización (HVAC) — Red 528 Locales</h2>
-              <p style="font-size:13px;color:#cbd5e1;">
-                Bienvenido al panel principal. Desde aquí podés acceder a los 5 módulos activos de Fase 1, dar de alta equipos de aire acondicionado para generar sus etiquetas QR, simular el escaneo de un QR o poblar tu base de datos en Firebase Cloud Firestore.
-              </p>
+        // 1. PANTALLA ADMINISTRADOR
+        if (currentRole === "admin") {
+          container.innerHTML = `
+            <div class="hero">
+              <div style="max-width:700px;">
+                <span class="badge badge-blue" style="margin-bottom:8px;">🛡️ PANTALLA 1 • ADMINISTRADOR DEL SISTEMA (CONTROL TOTAL)</span>
+                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Panel de Administración General & Base de Datos Firestore</h2>
+                <p style="font-size:13px;color:#cbd5e1;">
+                  Tenés todos los privilegios habilitados: alta y edición de aires acondicionados (HVAC), generación de etiquetas QR, gestión de tickets, KPIs gerenciales y <b>acceso exclusivo a la administración de la base de datos Firebase Cloud Firestore (${fbProjectId})</b>.
+                </p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
+                <button class="btn btn-amber" onclick="switchTab('firebase')">🔥 Administrar Base de Datos Firestore</button>
+              </div>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
-              <button class="btn btn-amber" onclick="switchTab('firebase')">🔥 Configurar Firebase & GitHub</button>
-            </div>
-          </div>
 
-          <div class="grid-4" style="margin-bottom:20px;">
-            <div class="card">
-              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Red Nacional Activa</span>
-              <div style="font-size:28px;font-weight:900;margin-top:4px;">528 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">locales</span></div>
-              <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">8 Zonas (CABA, GBA e Interior)</div>
+            <div class="grid-4" style="margin-bottom:20px;">
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Red Nacional Activa</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">528 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">locales</span></div>
+                <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">8 Zonas (CABA, GBA e Interior)</div>
+              </div>
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Activos HVAC Registrados</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">${assets.length} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">con QR único</span></div>
+                <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">Alta y edición habilitadas</div>
+              </div>
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets Abiertos</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">activos</span></div>
+                <div style="font-size:12px;color:var(--amber-600);margin-top:4px;">Cumplimiento SLA Red: 92.4%</div>
+              </div>
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Base de Datos Cloud Firestore</span>
+                <div class="mono" style="font-size:15px;font-weight:900;margin-top:8px;color:var(--blue-700);">${fbProjectId}</div>
+                <div style="font-size:12px;color:var(--emerald-600);margin-top:6px;">🔓 Escritura Admin Habilitada</div>
+              </div>
             </div>
-            <div class="card">
-              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTTR (Tiempo Medio Reparación)</span>
-              <div style="font-size:28px;font-weight:900;margin-top:4px;">3.75 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
-              <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">Dentro de meta SLA (&lt; 6.0 hs)</div>
-            </div>
-            <div class="card">
-              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTBF (Tiempo Entre Fallas)</span>
-              <div style="font-size:28px;font-weight:900;margin-top:4px;">958.4 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
-              <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">Disponibilidad Técnica: 94.8%</div>
-            </div>
-            <div class="card">
-              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets Abiertos Ahora</span>
-              <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">activos</span></div>
-              <div style="font-size:12px;color:var(--amber-600);margin-top:4px;">Cumplimiento SLA Red: 92.4%</div>
-            </div>
-          </div>
 
-          <h3 style="font-size:16px;margin-bottom:12px;">Accesos Directos a los Módulos del Sistema</h3>
-          <div class="grid-3">
-            <div class="card card-interactive" onclick="switchTab('assets')">
-              <span class="badge badge-blue">Módulo 1 • ${assets.length} Equipos con QR</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Activos HVAC y Generador de Códigos QR</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Cargá los aires acondicionados de cada local, consultá su ficha JSONB e imprimí sus etiquetas QR autoadhesivas.</p>
+            <h3 style="font-size:16px;margin-bottom:12px;">Módulos Habilitados para el Administrador</h3>
+            <div class="grid-3">
+              <div class="card card-interactive" onclick="switchTab('assets')">
+                <span class="badge badge-blue">Módulo 1 • Alta y Edición Habilitada</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Activos HVAC y Generador de Códigos QR</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Cargá nuevos aires acondicionados, editá equipos e imprimí sus etiquetas QR autoadhesivas.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('asset_360')">
+                <span class="badge badge-green">Destino del Escaneo QR</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🔍 Hoja de Vida 360° e Historial del Equipo</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Ficha técnica JSONB, historial de fallas y mantenimientos preventivos firmados.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('tickets')">
+                <span class="badge badge-red">Módulo 2 • ${openTicketsCount} Pendientes</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🛠️ Solicitudes de Mantenimiento / Tickets</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Reporte de fallas, asignación de técnicos y cierre de tickets.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('preventive')">
+                <span class="badge badge-green">Módulo 3 • ISO 55000</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">📋 Planes Preventivos y Firma Digital</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Ejecución y auditoría de checklists preventivos con mediciones y firma.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('kpis')">
+                <span class="badge badge-amber">Módulo 4 • Indicadores</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">📊 KPIs Operativos (MTTR, MTBF y SLA)</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Tablero gerencial con métricas por región (CABA, GBA, Interior).</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('firebase')">
+                <span class="badge badge-amber">Exclusivo Administrador</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🔥 Gestión de Base de Datos Cloud Firestore</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Configuración, reglas y poblado de colecciones en Firebase (bloqueado para Jefes y Técnicos).</p>
+              </div>
             </div>
-            <div class="card card-interactive" onclick="switchTab('asset_360')">
-              <span class="badge badge-green">Destino del Escaneo QR</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">🔍 Hoja de Vida 360° e Historial del Equipo</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Pantalla que se abre al escanear el código QR pegado en el equipo: muestra sus datos técnicos, historial de fallas y checklists.</p>
+          `;
+          return;
+        }
+
+        // 2. PANTALLA JEFE / GERENTE DE MANTENIMIENTO
+        if (currentRole === "jefe_mantenimiento") {
+          container.innerHTML = `
+            <div class="hero hero-jefe">
+              <div style="max-width:720px;">
+                <span class="badge badge-purple" style="margin-bottom:8px;">👔 PANTALLA 2 • JEFE / GERENTE DE MANTENIMIENTO</span>
+                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Gestión de Parque de Activos HVAC, Cuadrillas y SLA</h2>
+                <p style="font-size:13px;color:#ddd6fe;">
+                  Tenés privilegios completos para <b>gestionar los activos HVAC</b> (dar de alta nuevos equipos, editar criticidad/estado y generar etiquetas QR), asignar técnicos a tickets y auditar KPIs. <b>Por seguridad corporativa, no tenés acceso a modificar ni re-estructurar la base de datos Firestore.</b>
+                </p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
+                <button class="btn btn-outline" onclick="switchTab('kpis')">📊 Ver Tablero KPIs / SLA</button>
+              </div>
             </div>
-            <div class="card card-interactive" onclick="switchTab('tickets')">
-              <span class="badge badge-red">Módulo 2 • ${openTicketsCount} Pendientes</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">🛠️ Solicitudes de Mantenimiento / Tickets</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Reporte de fallas desde tienda con síntomas estandarizados, asignación de técnicos y resolución.</p>
+
+            <div class="grid-4" style="margin-bottom:20px;">
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Gestión de Activos HVAC</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">${assets.length} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">equipos</span></div>
+                <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">✅ Alta, Edición y QR Habilitados</div>
+              </div>
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTTR / MTBF Red</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">3.75 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
+                <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">MTBF: 958.4 hs • Disp: 94.8%</div>
+              </div>
+              <div class="card">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets por Supervisar</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">abiertos</span></div>
+                <div style="font-size:12px;color:var(--purple-600);margin-top:4px;">Asignación de técnicos activa</div>
+              </div>
+              <div class="card" style="background:#f8fafc;border-style:dashed;">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Base de Datos Firestore</span>
+                <div style="font-size:15px;font-weight:800;margin-top:8px;color:var(--slate-600);">🔒 Acceso Restringido</div>
+                <div style="font-size:11px;color:var(--slate-500);margin-top:4px;">Solo el Administrador puede modificar la estructura de BD</div>
+              </div>
             </div>
-            <div class="card card-interactive" onclick="switchTab('preventive')">
-              <span class="badge badge-green">Módulo 3 • ISO 55000</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">📋 Planes Preventivos y Firma Digital</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Ejecución de checklists dinámicos con mediciones de presión (PSI), corriente (A) y firma de conformidad.</p>
+
+            <h3 style="font-size:16px;margin-bottom:12px;">Módulos de Gestión del Jefe / Gerente de Mantenimiento</h3>
+            <div class="grid-3">
+              <div class="card card-interactive" onclick="switchTab('assets')">
+                <span class="badge badge-purple">Gestión de Activos Habilitada</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Alta, Edición de Activos HVAC y Etiquetas QR</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Cargá nuevos equipos de aire acondicionado, actualizá su estado/criticidad e imprimí las planchas de códigos QR.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('tickets')">
+                <span class="badge badge-red">${openTicketsCount} Tickets Activos</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🛠️ Despacho y Asignación de Técnicos</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Asigná o reasigná técnicos tercerizados a cada ticket reportado por las tiendas y auditá las resoluciones.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('kpis')">
+                <span class="badge badge-amber">Gerencia de Mantenimiento</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">📊 Tablero de KPIs (MTTR, MTBF y SLA)</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Control de tiempos medios de reparación y cumplimiento de SLA en CABA, GBA e Interior.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('asset_360')">
+                <span class="badge badge-green">Auditoría Técnica 360°</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🔍 Hoja de Vida e Historial por Equipo</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Inspeccioná la ficha JSONB y todas las intervenciones históricas realizadas sobre cada activo.</p>
+              </div>
+              <div class="card card-interactive" onclick="switchTab('preventive')">
+                <span class="badge badge-green">Planes Preventivos ISO 55000</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">📋 Control de Checklists Preventivos y Firmas</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Verificá las lecturas de presión (PSI), consumo eléctrico (Amperes) y firmas de encargados de tienda.</p>
+              </div>
             </div>
-            <div class="card card-interactive" onclick="switchTab('kpis')">
-              <span class="badge badge-amber">Módulo 4 • Indicadores</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">📊 KPIs Operativos (MTTR, MTBF y SLA)</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Tablero gerencial con métricas por región (CABA, GBA, Interior) y auditoría de tiempos por ticket.</p>
+          `;
+          return;
+        }
+
+        // 3. PANTALLA TÉCNICO DE CAMPO
+        if (currentRole === "tecnico") {
+          const myTickets = tickets.filter((t) => t.status !== "resuelto");
+          container.innerHTML = `
+            <div class="hero hero-tecnico">
+              <div style="max-width:720px;">
+                <span class="badge badge-green" style="margin-bottom:8px;">🧰 PANTALLA 3 • TÉCNICO DE CAMPO (OPERACIÓN Y ESCÁNER QR)</span>
+                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Consola Operativa para Técnicos HVAC en Sucursal</h2>
+                <p style="font-size:13px;color:#d1fae5;">
+                  Bienvenido, <b>Carlos Rodríguez</b>. Desde esta pantalla podés escanear el código QR pegado en el equipo para ver sus datos técnicos e historial, atender tus tickets asignados y completar los checklists preventivos con firma. <b>No tenés permisos para dar de alta equipos nuevos ni modificar la base de datos Firestore.</b>
+                </p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-green" onclick="switchTab('mobile')">📷 Escanear QR de Equipo</button>
+                <button class="btn btn-outline" onclick="switchTab('preventive')">📋 Completar Checklist Preventivo</button>
+              </div>
             </div>
-            <div class="card card-interactive" onclick="switchTab('firebase')">
-              <span class="badge badge-amber">Cloud Firestore + Git</span>
-              <h4 style="font-size:16px;margin:8px 0 4px;">🔥 Base de Datos Firebase & Subida a GitHub</h4>
-              <p style="font-size:12px;color:var(--slate-600);">Poblá automáticamente las colecciones en tu proyecto de Firebase Cloud Firestore desde el navegador.</p>
+
+            <div class="grid-2-1">
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <h3 style="font-size:17px;">🛠️ Mis Tickets Asignados en Sucursales (${myTickets.length} Pendientes)</h3>
+                ${myTickets.length === 0 ? `<div class="card">No tenés tickets pendientes en este momento.</div>` : myTickets.map((t) => {
+                  const asset = assets.find((a) => a.id === t.asset_id) || assets[0];
+                  const store = stores.find((s) => s.id === t.store_id) || stores[0];
+                  return `
+                    <div class="card">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+                        <div>
+                          <span class="mono badge badge-blue">${t.ticket_number}</span>
+                          <span class="badge ${t.priority === 'critica' ? 'badge-red' : 'badge-amber'}">Prioridad ${t.priority}</span>
+                          <span class="badge badge-green">${t.status}</span>
+                        </div>
+                        <button class="btn btn-blue" onclick="scanAssetQr(${asset.id})">📷 Escanear QR (${asset.tag_code}) →</button>
+                      </div>
+                      <h4 style="font-size:15px;">${t.failure_symptom}</h4>
+                      <p style="font-size:13px;color:var(--slate-600);margin:4px 0 8px;">${t.description}</p>
+                      <div style="font-size:12px;color:var(--slate-600);margin-bottom:10px;">
+                        📍 <b>${store.code} - ${store.name}</b> (${store.address}) • Sector: <b>${asset.location_in_store}</b>
+                      </div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:10px;">
+                        ${t.status === "asignado" || t.status === "abierto" ? `
+                          <button class="btn btn-amber" onclick="startTicketVisit(${t.id})">🚐 Iniciar Visita en Local</button>
+                        ` : ""}
+                        <button class="btn btn-green" onclick="resolveTicket(${t.id})">✅ Cargar Solución y Cerrar Ticket</button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+
+              <div class="card" style="height:fit-content;">
+                <span class="badge badge-green">Acceso Rápido QR</span>
+                <h3 style="font-size:16px;margin:8px 0;">📷 Simular Escaneo QR en Tienda</h3>
+                <p style="font-size:12px;color:var(--slate-600);margin-bottom:12px;">
+                  Seleccioná la etiqueta QR del equipo frente al cual te encontrás para abrir su Ficha Técnica e Historial de Reparaciones:
+                </p>
+                <div style="display:grid;gap:8px;">
+                  ${assets.map((a) => `
+                    <button class="btn btn-outline" style="justify-content:space-between;padding:10px;" onclick="scanAssetQr(${a.id})">
+                      <span class="mono" style="color:var(--blue-700);font-weight:800;">🔍 ${a.tag_code}</span>
+                      <span>${a.type} (${a.brand}) →</span>
+                    </button>
+                  `).join("")}
+                </div>
+                <div style="margin-top:14px;padding:10px;border-radius:8px;background:#f8fafc;border:1px dashed #cbd5e1;font-size:11px;color:var(--slate-500);">
+                  🔒 <b>Nota de Privilegios (Rol Técnico):</b> El alta de nuevos equipos HVAC está reservada al Jefe de Mantenimiento y al Administrador.
+                </div>
+              </div>
             </div>
-          </div>
-        `;
-        return;
+          `;
+          return;
+        }
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA FIREBASE (SOLO ACCESIBLE POR EL ADMINISTRADOR)
+      // --------------------------------------------------------------------------
       if (currentTab === "firebase") {
+        if (!profile.canModifyFirestoreDb) {
+          container.innerHTML = `
+            <div class="card" style="border-color:#fca5a5;background:#fef2f2;color:#991b1b;">
+              <h3>⛔ Acceso Restringido — Privilegio Exclusivo del Administrador</h3>
+              <p style="font-size:13px;margin-top:6px;">
+                Tu perfil actual (<b>${profile.title}</b>) no tiene permisos para modificar ni configurar la base de datos Firebase Cloud Firestore.
+              </p>
+            </div>
+          `;
+          return;
+        }
         container.innerHTML = `
           <div class="grid-2-1">
             <div class="card">
-              <span class="badge badge-amber">Paso 1 • Base de Datos en la Nube</span>
-              <h2 style="font-size:20px;margin:6px 0;">🔥 Crear y Poblar las Colecciones en Firebase Cloud Firestore</h2>
+              <span class="badge badge-amber">Exclusivo Administrador • Cloud Firestore</span>
+              <h2 style="font-size:20px;margin:6px 0;">🔥 Administración y Sincronización de Base de Datos Firestore</h2>
               <p style="font-size:13px;color:var(--slate-600);margin-bottom:14px;">
-                Ingresá el <b>Project ID</b> de tu proyecto de Firebase (creado en <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue-600);font-weight:700;">console.firebase.google.com</a> $\rightarrow$ Firestore Database) y hacé clic en el botón para crear automáticamente todas las colecciones y documentos iniciales del CMMS:
+                Esta pantalla sólo está disponible para el <b>Administrador</b>. Los perfiles de <i>Jefe de Mantenimiento</i> y <i>Técnico</i> tienen bloqueado el acceso a esta configuración.
               </p>
               <form onsubmit="seedCloudFirestoreFromBrowser(event)" style="display:grid;gap:12px;">
                 <div>
                   <label>Firebase Project ID (obligatorio)</label>
-                  <input id="fb_project_id" class="input mono" placeholder="ej: cmms-red-528-locales" value="${fbProjectId}" required />
+                  <input id="fb_project_id" class="input mono" value="${fbProjectId}" required />
                 </div>
                 <div>
-                  <label>Firebase Web API Key (opcional si las reglas están en modo prueba)</label>
+                  <label>Firebase Web API Key (opcional)</label>
                   <input id="fb_api_key" class="input mono" placeholder="AIzaSy..." value="${fbApiKey}" />
                 </div>
                 <button type="submit" class="btn btn-amber" style="padding:11px;font-size:13px;">
-                  🚀 Crear Colecciones y Cargar Datos Iniciales en Cloud Firestore Ahora
+                  🚀 Sincronizar / Sobrescribir Colecciones en Cloud Firestore (${fbProjectId})
                 </button>
               </form>
               <div id="fbSeedStatus" style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--slate-700);">
-                Colecciones que se crearán automáticamente: <code>zones</code>, <code>stores</code>, <code>assets</code> (con QR UUID y JSONB), <code>maintenance_requests</code> y <code>preventive_executions</code>.
+                Proyecto conectado: <code>${fbProjectId}</code>.
               </div>
             </div>
 
             <div class="card" style="height:fit-content;">
-              <span class="badge badge-blue">Paso 2 • Repositorio GitHub</span>
-              <h3 style="font-size:16px;margin:6px 0 8px;">🐙 Subir a tu Cuenta de GitHub</h3>
-              <p style="font-size:12px;color:var(--slate-600);margin-bottom:10px;">
-                El repositorio Git local ya está inicializado con todos los archivos del proyecto, reglas de Firestore (<code>firestore.rules</code>) e índices (<code>firestore.indexes.json</code>).
-              </p>
-              <div style="font-size:12px;color:var(--slate-700);margin-bottom:6px;font-weight:700;">Comandos listos para conectar tu repo de GitHub:</div>
-              <pre class="json-box mono" style="font-size:11px;">git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
-git branch -M main
-git push -u origin main</pre>
+              <span class="badge badge-blue">Matriz de Privilegios RBAC</span>
+              <h3 style="font-size:16px;margin:6px 0 8px;">🔐 Permisos por Pantalla</h3>
+              <div style="font-size:12px;display:grid;gap:8px;color:var(--slate-700);">
+                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
+                  <b>🛡️ 1. Administrador:</b> Carga equipos + Gestiona activos + Administra BD Firestore.
+                </div>
+                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
+                  <b>👔 2. Jefe / Gerente Mto:</b> Carga y edita equipos HVAC + Imprime QR + Asigna técnicos + Ve KPIs. <b>(Sin acceso a BD Firestore)</b>.
+                </div>
+                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
+                  <b>🧰 3. Técnico de Campo:</b> Escanea QR + Ve Ficha e Historial + Resuelve tickets + Firma preventivos. <b>(No puede cargar equipos ni tocar BD Firestore)</b>.
+                </div>
+              </div>
             </div>
           </div>
         `;
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA 1: ACTIVOS HVAC (CON PERMISOS DIFERENCIADOS)
+      // --------------------------------------------------------------------------
       if (currentTab === "assets") {
         const allIds = JSON.stringify(assets.map((a) => a.id));
         container.innerHTML = `
           <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
             <div>
-              <h2 style="font-size:20px;">🏢 Padrón de Aires Acondicionados (HVAC) y Generador de QR</h2>
-              <p style="font-size:13px;color:var(--slate-600);">Cada equipo cargado genera su propio código QR único vinculado a sus datos técnicos e historial.</p>
+              <h2 style="font-size:20px;">🏢 Padrón de Aires Acondicionados (HVAC) y Códigos QR</h2>
+              <p style="font-size:13px;color:var(--slate-600);">
+                ${profile.canCreateOrEditAssets
+                  ? "Modo Gestión Activo (Admin / Jefe de Mantenimiento): Podés dar de alta equipos nuevos, editar parámetros e imprimir etiquetas QR."
+                  : "Modo Consulta Técnica (Rol Técnico): Podés consultar las fichas técnicas y escanear los códigos QR. El alta de equipos está deshabilitada para tu rol."}
+              </p>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-dark" onclick='openQrPrintModal(${allIds})'>🖨️ Imprimir Plancha QR (${assets.length} Equipos)</button>
-              <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Nuevo Aire Acondicionado</button>
+              ${profile.canCreateOrEditAssets ? `
+                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Nuevo Aire Acondicionado</button>
+              ` : `
+                <span class="badge badge-amber" style="padding:8px 12px;">🔒 Alta de Equipos Restringida (Solo Admin / Jefe Mto)</span>
+              `}
             </div>
           </div>
 
@@ -1026,7 +1627,7 @@ git push -u origin main</pre>
                           ${createQrSvgHtml("https://cmms.red528.com.ar/?qr=" + a.qr_code_uuid, 60)}
                         </div>
                         <div>
-                          <div style="display:flex;gap:6px;align-items:center;">
+                          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                             <span class="mono badge badge-blue">${a.tag_code}</span>
                             <span class="badge ${a.status === 'operativo' ? 'badge-green' : 'badge-red'}">${a.status}</span>
                             <span style="font-size:11px;color:var(--slate-500);">Criticidad: <b>${a.criticality.toUpperCase()}</b></span>
@@ -1039,6 +1640,9 @@ git push -u origin main</pre>
                         </div>
                       </div>
                       <div style="display:flex;flex-direction:column;gap:6px;">
+                        ${profile.canCreateOrEditAssets ? `
+                          <button class="btn btn-purple" onclick="event.stopPropagation();openEditAssetModal(${a.id});">✏️ Gestionar / Editar Activo</button>
+                        ` : ""}
                         <button class="btn btn-outline" onclick="event.stopPropagation();openQrPrintModal([${a.id}]);">🖨️ Etiqueta QR</button>
                         <button class="btn btn-blue" onclick="event.stopPropagation();scanAssetQr(${a.id});">🔍 Escanear QR (Datos + Historial) →</button>
                       </div>
@@ -1066,6 +1670,11 @@ git push -u origin main</pre>
                   <button class="btn btn-dark" onclick="openQrPrintModal([${selectedAsset.id}])">🖨️ Imprimir QR</button>
                   <button class="btn btn-blue" onclick="scanAssetQr(${selectedAsset.id})">📱 Simular Escaneo QR</button>
                 </div>
+                ${profile.canCreateOrEditAssets ? `
+                  <button class="btn btn-purple" style="width:100%;margin-top:8px;" onclick="openEditAssetModal(${selectedAsset.id})">
+                    ✏️ Editar Estado / Ubicación / Criticidad
+                  </button>
+                ` : ""}
               </div>
 
               <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--slate-600);margin-bottom:6px;">
@@ -1078,6 +1687,9 @@ git push -u origin main</pre>
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA HOJA DE VIDA 360° AL ESCANEAR QR
+      // --------------------------------------------------------------------------
       if (currentTab === "asset_360") {
         const store = stores.find((s) => s.id === selectedAsset.store_id) || stores[0];
         const assetTickets = tickets.filter((t) => t.asset_id === selectedAsset.id);
@@ -1103,8 +1715,11 @@ git push -u origin main</pre>
               </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              ${profile.canCreateOrEditAssets ? `
+                <button class="btn btn-purple" onclick="openEditAssetModal(${selectedAsset.id})">✏️ Editar Activo</button>
+              ` : ""}
               <button class="btn btn-outline" onclick="openQrPrintModal([${selectedAsset.id}])">🖨️ Imprimir Etiqueta QR</button>
-              <button class="btn btn-red" onclick="switchTab('tickets')">🚨 Reportar Falla en este Equipo</button>
+              <button class="btn btn-red" onclick="switchTab('tickets')">🚨 Reportar Falla</button>
               <button class="btn btn-green" onclick="switchTab('preventive')">📋 Ejecutar Checklist Preventivo</button>
             </div>
           </div>
@@ -1117,6 +1732,7 @@ git push -u origin main</pre>
               <div style="font-size:13px;display:grid;gap:8px;margin-bottom:14px;">
                 <div><b>Tipo de Equipo:</b> ${selectedAsset.type}</div>
                 <div><b>Estado Actual:</b> <span class="badge ${selectedAsset.status === 'operativo' ? 'badge-green' : 'badge-red'}">${selectedAsset.status}</span></div>
+                <div><b>Criticidad ISO 55000:</b> ${selectedAsset.criticality.toUpperCase()}</div>
                 <div><b>Capacidad Frigorífica:</b> ${selectedAsset.capacity_kcal_fg} kcal/fg</div>
                 <div><b>Gas Refrigerante:</b> ${selectedAsset.refrigerant_type}</div>
                 <div><b>Alimentación Eléctrica:</b> ${selectedAsset.power_supply}</div>
@@ -1171,6 +1787,9 @@ git push -u origin main</pre>
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA 2: SOLICITUDES / TICKETS
+      // --------------------------------------------------------------------------
       if (currentTab === "tickets") {
         container.innerHTML = `
           <div class="grid-2-1">
@@ -1180,18 +1799,33 @@ git push -u origin main</pre>
                 const asset = assets.find((a) => a.id === t.asset_id) || assets[0];
                 return `
                   <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
                       <div>
                         <span class="mono badge badge-blue">${t.ticket_number}</span>
                         <span class="badge ${t.status === 'resuelto' ? 'badge-green' : 'badge-amber'}">${t.status}</span>
+                        <span class="badge ${t.priority === 'critica' ? 'badge-red' : 'badge-blue'}">Prioridad: ${t.priority}</span>
                       </div>
                       <button class="btn btn-outline" onclick="scanAssetQr(${asset.id})">🔍 Ver Equipo ${asset.tag_code}</button>
                     </div>
                     <h4 style="font-size:15px;">${t.failure_symptom}</h4>
                     <p style="font-size:13px;color:var(--slate-600);margin:4px 0 8px;">${t.description}</p>
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--slate-500);border-top:1px solid var(--border);padding-top:8px;">
-                      <span>Reportado: ${t.reported_at} • Técnico: <b>${t.technician}</b></span>
-                      ${t.status !== "resuelto" ? `<button class="btn btn-green" onclick="resolveTicket(${t.id})">✅ Resolver Ticket</button>` : `<span>Resuelto ✅</span>`}
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--slate-500);border-top:1px solid var(--border);padding-top:8px;">
+                      <div>
+                        Reportado: ${t.reported_at} • Técnico: <b>${t.technician}</b>
+                        ${profile.canAssignTechnicians && t.status !== "resuelto" ? `
+                          <select style="width:auto;padding:4px 8px;margin-left:6px;font-size:11px;" onchange="assignTechnicianToTicket(${t.id}, this.value)">
+                            <option value="">Reasignar técnico...</option>
+                            <option value="Carlos Rodríguez">Carlos Rodríguez (ClimaService)</option>
+                            <option value="Hernán Pereyra">Hernán Pereyra (FríoSur)</option>
+                          </select>
+                        ` : ""}
+                      </div>
+                      <div style="display:flex;gap:6px;">
+                        ${t.status !== "resuelto" ? `
+                          <button class="btn btn-amber" onclick="startTicketVisit(${t.id})">🚐 En Visita</button>
+                          <button class="btn btn-green" onclick="resolveTicket(${t.id})">✅ Resolver Ticket</button>
+                        ` : `<span>Resuelto ✅</span>`}
+                      </div>
                     </div>
                   </div>
                 `;
@@ -1237,10 +1871,13 @@ git push -u origin main</pre>
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA 3: CHECKLISTS PREVENTIVOS Y FIRMA
+      // --------------------------------------------------------------------------
       if (currentTab === "preventive") {
         container.innerHTML = `
           <form class="card" style="max-width:760px;margin:0 auto;" onsubmit="handleSavePreventive(event)">
-            <span class="badge badge-green">Módulo 3 • Mantenimiento Preventivo</span>
+            <span class="badge badge-green">Módulo 3 • Mantenimiento Preventivo (${profile.userName})</span>
             <h2 style="font-size:19px;margin:6px 0 14px;">📋 Ejecución de Checklist Preventivo Dinámico y Firma</h2>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
               <div>
@@ -1276,6 +1913,9 @@ git push -u origin main</pre>
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA 4: KPIs OPERATIVOS (ADMIN Y JEFE DE MANTENIMIENTO)
+      // --------------------------------------------------------------------------
       if (currentTab === "kpis") {
         container.innerHTML = `
           <div class="grid-4" style="margin-bottom:20px;">
@@ -1294,13 +1934,16 @@ git push -u origin main</pre>
         return;
       }
 
+      // --------------------------------------------------------------------------
+      // PESTAÑA 5: APP MÓVIL OFFLINE + ESCÁNER QR
+      // --------------------------------------------------------------------------
       if (currentTab === "mobile") {
         container.innerHTML = `
           <div class="phone-frame">
             <div class="phone-screen">
               <div>
                 <div style="background:${isOffline ? '#d97706' : '#1d4ed8'};color:#fff;padding:12px 16px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;">
-                  <span>📱 CMMS App Campo</span>
+                  <span>📱 CMMS App (${profile.role})</span>
                   <span>${isOffline ? '⚡ SIN SEÑAL (OFFLINE)' : '📶 5G ONLINE'}</span>
                 </div>
                 <div style="padding:16px;">
@@ -1328,6 +1971,10 @@ git push -u origin main</pre>
 
     window.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get("role");
+      if (roleParam && ROLE_PROFILES[roleParam]) {
+        currentRole = roleParam;
+      }
       const qr = params.get("qr");
       if (qr) {
         const found = assets.find((a) => a.qr_code_uuid.toLowerCase() === qr.toLowerCase() || a.tag_code.toLowerCase() === qr.toLowerCase());
@@ -1336,7 +1983,8 @@ git push -u origin main</pre>
           currentTab = "asset_360";
         }
       }
-      render();
+      switchRole(currentRole);
+      loadFromCloudFirestore();
     });
   </script>
 </body>
