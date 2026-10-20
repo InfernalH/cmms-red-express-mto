@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fracttal-AR CMMS / GMAO | Red 528 Locales — Vistas por Rol (Admin, Jefe Mto, Técnico)</title>
+  <title>Fracttal-AR CMMS / GMAO | Red 528 Locales Octubre — Admin, Jefe Mto y Técnico</title>
   <style>
     :root {
       --bg: #f1f5f9;
@@ -42,11 +42,10 @@
       border-bottom: 1px solid var(--slate-800);
     }
     .container {
-      max-width: 1280px;
+      max-width: 1300px;
       margin: 0 auto;
       padding: 0 16px;
     }
-    /* Barra Superior de Selector de Pantallas por Rol (RBAC) */
     .role-switcher-bar {
       background: #020617;
       border-bottom: 1px solid #1e293b;
@@ -245,6 +244,36 @@
       font-size: 12px;
       overflow-x: auto;
     }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: #f8fafc;
+      color: var(--slate-600);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      text-align: left;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    tr:hover td {
+      background: #f8fafc;
+    }
     .toast {
       position: fixed;
       bottom: 20px;
@@ -298,12 +327,13 @@
       justify-content: space-between;
     }
   </style>
+  <!-- Carga de la Base Oficial de 528 Locales de Octubre desde Google Sheets -->
+  <script src="locales-data.js"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
 
   <header>
-    <!-- BARRA SELECTORA DE LAS 3 PANTALLAS POR ROL Y PRIVILEGIOS -->
     <div class="role-switcher-bar">
       <div class="container role-switcher-inner">
         <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1;">
@@ -315,7 +345,7 @@
             🛡️ 1. Pantalla Administrador (Control Total + Base de Datos Firestore)
           </button>
           <button id="roleBtn_jefe_mantenimiento" class="role-pill" onclick="switchRole('jefe_mantenimiento')">
-            👔 2. Pantalla Jefe / Gerente Mantenimiento (Gestión Activos + QR • Sin Base de Datos)
+            👔 2. Pantalla Jefe / Gerente Mantenimiento (Gestión Locales & Activos • Sin BD Firestore)
           </button>
           <button id="roleBtn_tecnico" class="role-pill" onclick="switchRole('tecnico')">
             🧰 3. Pantalla Técnico de Campo (Escáner QR + Tickets + Preventivo • Sin Carga de Equipos)
@@ -334,7 +364,7 @@
               <span id="roleHeaderBadge" class="badge badge-blue">VISTA ADMINISTRADOR</span>
             </div>
             <div id="roleHeaderSubtitle" style="font-size:12px;color:#94a3b8;">
-              Usuario activo: Ing. Martín Echeverría (admin) • Acceso total a Activos HVAC, QR y Base de Datos Firestore
+              Base Oficial Octubre • 528 Locales en 20 Zonas • Climatización HVAC & QR
             </div>
           </div>
         </div>
@@ -351,6 +381,73 @@
     <div id="appContent"></div>
   </main>
 
+  <!-- MODAL SUMAR NUEVO LOCAL (APERTURA DE SUCURSAL) -->
+  <div id="newStoreModal" class="modal-backdrop">
+    <div class="modal" style="max-width:600px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
+        <div>
+          <span class="badge badge-green">Padrón de Red • Apertura de Tienda</span>
+          <h3 style="font-size:17px;margin-top:4px;">➕ Sumar Nuevo Local a la Red</h3>
+          <p style="font-size:12px;color:var(--slate-500);">Se agregará al padrón oficial con sus 4 columnas (Nro de Local, Dirección, Localidad y Zona) y se sincronizará con Firestore.</p>
+        </div>
+        <button class="btn btn-outline" onclick="closeNewStoreModal()">✕</button>
+      </div>
+      <form onsubmit="handleCreateStore(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Nro de Local (obligatorio)</label>
+          <input id="st_nro" type="number" class="input mono" placeholder="Ej: 6046" required />
+        </div>
+        <div>
+          <label>Zona (1 a 20)</label>
+          <select id="st_zona" class="input">
+            <option value="1">Zona 1 (GBA Norte)</option>
+            <option value="2">Zona 2 (GBA Oeste)</option>
+            <option value="3">Zona 3 (GBA Sur)</option>
+            <option value="4">Zona 4 (CABA Sur/Oeste)</option>
+            <option value="5">Zona 5 (CABA Centro)</option>
+            <option value="6">Zona 6 (CABA Oeste/Devoto)</option>
+            <option value="7">Zona 7 (CABA Belgrano/Núñez)</option>
+            <option value="8">Zona 8 (CABA Palermo/Colegiales)</option>
+            <option value="9">Zona 9 (CABA Palermo/Almagro)</option>
+            <option value="10">Zona 10 (CABA Villa Crespo/Caballito)</option>
+            <option value="11">Zona 11 (CABA San Telmo/Barracas)</option>
+            <option value="12">Zona 12 (CABA Microcentro/San Nicolás)</option>
+            <option value="13">Zona 13 (CABA Recoleta/Retiro)</option>
+            <option value="14">Zona 14 (CABA Monserrat/Congreso)</option>
+            <option value="15">Zona 15 (Córdoba Capital / Norte)</option>
+            <option value="16">Zona 16 (CABA Villa Urquiza/Saavedra)</option>
+            <option value="17">Zona 17 (Mendoza / Gran Mendoza)</option>
+            <option value="18">Zona 18 (Córdoba Nueva Córdoba/Centro)</option>
+            <option value="19">Zona 19 (Salta)</option>
+            <option value="20">Zona 20 (Córdoba / Punilla)</option>
+          </select>
+        </div>
+        <div style="grid-column:1 / -1;">
+          <label>Dirección Exacta (Calle y Altura)</label>
+          <input id="st_dir" class="input" placeholder="Ej: Av. Santa Fe 3820" required />
+        </div>
+        <div>
+          <label>Localidad / Región</label>
+          <select id="st_loc" class="input">
+            <option value="CABA">CABA</option>
+            <option value="GBA">GBA</option>
+            <option value="CORDOBA">CORDOBA</option>
+            <option value="MENDOZA">MENDOZA</option>
+            <option value="SALTA">SALTA</option>
+          </select>
+        </div>
+        <div>
+          <label>Barrio / Ciudad (opcional)</label>
+          <input id="st_barrio" class="input" placeholder="Ej: Palermo / San Isidro" />
+        </div>
+        <div style="grid-column:1 / -1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="closeNewStoreModal()">Cancelar</button>
+          <button type="submit" class="btn btn-green">➕ Guardar y Sumar Local al Padrón</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL ALTA DE ACTIVO HVAC (Solo Admin y Jefe de Mantenimiento) -->
   <div id="newAssetModal" class="modal-backdrop">
     <div class="modal">
@@ -358,23 +455,18 @@
         <div>
           <span class="badge badge-blue">Permiso requerido: Administrador o Jefe de Mantenimiento</span>
           <h3 style="font-size:17px;margin-top:4px;">Cargar Nuevo Aire Acondicionado (Genera Código QR Único)</h3>
-          <p style="font-size:12px;color:var(--slate-500);">Al guardar se asigna su UUID, se sincroniza en Firestore y se genera su etiqueta QR vinculada a su Hoja de Vida.</p>
+          <p style="font-size:12px;color:var(--slate-500);">Seleccioná cualquiera de los locales activos de la base de Octubre para asociar el equipo y generar su código QR.</p>
         </div>
         <button class="btn btn-outline" onclick="closeNewAssetModal()">✕</button>
       </div>
       <form onsubmit="handleCreateAsset(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label>Sucursal / Local</label>
-          <select id="fa_store" class="input">
-            <option value="1">LOC-001 - Sucursal Palermo Soho (CABA)</option>
-            <option value="2">LOC-002 - Sucursal Belgrano Cabildo (CABA)</option>
-            <option value="5">LOC-005 - Sucursal San Isidro Centro (GBA)</option>
-            <option value="10">LOC-010 - Sucursal Córdoba Nueva Córdoba (Interior)</option>
-          </select>
+        <div style="grid-column:1 / -1;">
+          <label>Sucursal / Local (Base de Locales Activos — Podés buscar por Nro de Local)</label>
+          <select id="fa_store" class="input" onchange="updateSuggestedTagCode()"></select>
         </div>
         <div>
           <label>Tipo de Equipo HVAC</label>
-          <select id="fa_type" class="input">
+          <select id="fa_type" class="input" onchange="updateSuggestedTagCode()">
             <option value="Split Muro">Split Muro</option>
             <option value="Piso-Techo">Piso-Techo</option>
             <option value="Rooftop">Rooftop</option>
@@ -383,7 +475,7 @@
         </div>
         <div>
           <label>Tag Code Único</label>
-          <input id="fa_tag" class="input mono" value="HVAC-LOC001-SM02" required />
+          <input id="fa_tag" class="input mono" value="HVAC-LOC254-SM01" required />
         </div>
         <div>
           <label>Criticidad ISO 55000</label>
@@ -406,9 +498,9 @@
           <label>Capacidad (kcal/fg)</label>
           <input id="fa_cap" type="number" class="input" value="4500" />
         </div>
-        <div>
+        <div style="grid-column:1 / -1;">
           <label>Ubicación en el Local</label>
-          <input id="fa_loc" class="input" value="Línea de Cajas Rápidas" required />
+          <input id="fa_loc" class="input" value="Salón de Ventas / Línea de Cajas" required />
         </div>
         <div style="grid-column:1 / -1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
           <button type="button" class="btn btn-outline" onclick="closeNewAssetModal()">Cancelar</button>
@@ -418,7 +510,7 @@
     </div>
   </div>
 
-  <!-- MODAL GESTIÓN / EDICIÓN DE ACTIVO HVAC (Solo Admin y Jefe de Mantenimiento) -->
+  <!-- MODAL GESTIÓN / EDICIÓN DE ACTIVO HVAC -->
   <div id="editAssetModal" class="modal-backdrop">
     <div class="modal">
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px;">
@@ -502,11 +594,11 @@
         icon: "🛡️",
         userName: "Ing. Martín Echeverría",
         userEmail: "mecheverria@redretail.com.ar",
-        canCreateOrEditAssets: true,     // Puede cargar y editar equipos HVAC y generar QR
-        canAssignTechnicians: true,      // Puede asignar técnicos y gestionar planes
-        canViewKpis: true,               // Puede ver KPIs gerenciales
-        canModifyFirestoreDb: true,      // EXCLUSIVO: Puede acceder y modificar la base de datos Firestore
-        description: "Acceso total: Puede cargar/editar equipos HVAC, generar códigos QR, gestionar tickets/preventivos y tiene acceso exclusivo a la configuración y escritura masiva de la base de datos Firebase Cloud Firestore."
+        canCreateOrEditAssets: true,     // Puede cargar/editar equipos HVAC y sumar/quitar locales
+        canAssignTechnicians: true,
+        canViewKpis: true,
+        canModifyFirestoreDb: true,      // EXCLUSIVO: Único con acceso a modificar/configurar la BD Firestore
+        description: "Acceso total: Puede sumar o dar de baja locales por cierre, cargar/editar equipos HVAC, generar códigos QR y administrar la base de datos Firebase Cloud Firestore."
       },
       jefe_mantenimiento: {
         role: "jefe_mantenimiento",
@@ -516,11 +608,11 @@
         icon: "👔",
         userName: "Ing. Laura Gómez",
         userEmail: "lgomez@redretail.com.ar",
-        canCreateOrEditAssets: true,     // SÍ puede cargar y gestionar activos HVAC y generar QR
-        canAssignTechnicians: true,      // SÍ puede asignar técnicos y gestionar tickets/planes
-        canViewKpis: true,               // SÍ puede ver KPIs (MTTR, MTBF, SLA)
-        canModifyFirestoreDb: false,     // RESTRINGIDO: NO tiene acceso a modificar/configurar la BD Firestore
-        description: "Gestión de Activos y Operaciones: Puede dar de alta nuevos aires acondicionados, editar activos existentes, imprimir etiquetas QR, asignar técnicos y auditar KPIs (MTTR/MTBF/SLA). NO tiene acceso a modificar ni administrar la base de datos Firestore."
+        canCreateOrEditAssets: true,     // SÍ puede gestionar locales y activos HVAC y generar QR
+        canAssignTechnicians: true,
+        canViewKpis: true,
+        canModifyFirestoreDb: false,     // RESTRINGIDO: NO tiene acceso a modificar la BD Firestore
+        description: "Gestión de Activos y Locales: Puede sumar locales o quitarlos por cierre, dar de alta y editar aires acondicionados, imprimir etiquetas QR, asignar técnicos y ver KPIs. NO tiene acceso a modificar la base de datos Firestore."
       },
       tecnico: {
         role: "tecnico",
@@ -530,11 +622,11 @@
         icon: "🧰",
         userName: "Carlos Rodríguez (ClimaService S.R.L.)",
         userEmail: "crodriguez@clima-service.com.ar",
-        canCreateOrEditAssets: false,    // RESTRINGIDO: Los técnicos NO pueden cargar ni editar equipos
-        canAssignTechnicians: false,     // Solo ejecuta sus tickets asignados
-        canViewKpis: false,              // Enfoque operativo de campo
+        canCreateOrEditAssets: false,    // RESTRINGIDO: Los técnicos NO pueden cargar equipos ni alterar locales
+        canAssignTechnicians: false,
+        canViewKpis: false,
         canModifyFirestoreDb: false,     // RESTRINGIDO: Sin acceso a la BD Firestore
-        description: "Operación en Campo: Puede escanear códigos QR, consultar la Hoja de Vida 360° (ficha técnica e historial), iniciar/resolver tickets de falla y firmar checklists preventivos. NO puede cargar equipos nuevos ni modificar la base de datos Firestore."
+        description: "Operación en Campo: Puede consultar las direcciones de los 528 locales, escanear códigos QR, ver la Hoja de Vida 360°, resolver tickets y firmar checklists preventivos. NO puede cargar equipos nuevos ni modificar la base de datos Firestore."
       }
     };
 
@@ -545,12 +637,55 @@
     let fbProjectId = localStorage.getItem("cmms_fb_project_id") || "cmms-red-express-locales";
     let fbApiKey = localStorage.getItem("cmms_fb_api_key") || "";
 
+    // Filtros del Módulo de Red de 528 Locales
+    let storeSearchQuery = "";
+    let storeFilterLocalidad = "TODAS";
+    let storeFilterZona = "TODAS";
+    let storeFilterStatus = "ACTIVOS"; // 'ACTIVOS', 'CERRADOS', 'TODOS'
+    let storePageLimit = 60;
+
+    // Inicialización de los 528 Locales Reales de Octubre (con persistencia en localStorage)
+    function initStoresData() {
+      const saved = localStorage.getItem("cmms_october_stores_v1");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+      if (window.INITIAL_528_STORES && Array.isArray(window.INITIAL_528_STORES)) {
+        return JSON.parse(JSON.stringify(window.INITIAL_528_STORES));
+      }
+      return [
+        { id: 254, nro_local: "254", code: "LOC-254", name: "Local 254 - San isidro", address: "Av. Diego Carman 451", direccion: "Av. Diego Carman 451", barrio: "San isidro", city: "GBA", localidad: "GBA", zona: 1, zone_id: 1, is_active: true, status_store: "abierto" }
+      ];
+    }
+
+    let stores = initStoresData();
+
+    function persistStores() {
+      try {
+        localStorage.setItem("cmms_october_stores_v1", JSON.stringify(stores));
+      } catch (e) {}
+    }
+
+    // 20 Zonas Reales de la Hoja de Octubre
+    const zones = Array.from({ length: 20 }, (_, i) => {
+      const zNum = i + 1;
+      let reg = "CABA";
+      if (zNum >= 1 && zNum <= 3) reg = "GBA";
+      else if (zNum === 15 || zNum === 18 || zNum === 20) reg = "CORDOBA";
+      else if (zNum === 17) reg = "MENDOZA";
+      else if (zNum === 19) reg = "SALTA";
+      return { id: zNum, name: `Zona ${zNum} (${reg})`, region: reg };
+    });
+
     const users = [
       { id: 1, full_name: "Ing. Martín Echeverría", email: "mecheverria@redretail.com.ar", role: "admin", is_active: true },
       { id: 2, full_name: "Ing. Laura Gómez", email: "lgomez@redretail.com.ar", role: "jefe_mantenimiento", is_active: true },
       { id: 3, full_name: "Carlos Rodríguez", email: "crodriguez@clima-service.com.ar", role: "tecnico", is_active: true },
-      { id: 4, full_name: "Hernán Pereyra", email: "hpereyra@friosur-mto.com.ar", role: "tecnico", is_active: true },
-      { id: 6, full_name: "Sofía Peralta", email: "encargado.001@redretail.com.ar", role: "encargado_local", is_active: true }
+      { id: 4, full_name: "Ignacio Portillo", email: "iportillo@clima-service.com.ar", role: "tecnico", is_active: true },
+      { id: 5, full_name: "Gabriel Amaya", email: "gamaya@clima-service.com.ar", role: "tecnico", is_active: true }
     ];
 
     const assetCategories = [
@@ -565,27 +700,10 @@
       { id: 4, category_id: 1, name: "Cortina de Aire" }
     ];
 
-    const zones = [
-      { id: 1, name: "CABA Centro y Corredor Norte", region: "CABA" },
-      { id: 2, name: "CABA Sur y Oeste", region: "CABA" },
-      { id: 3, name: "GBA Norte (Vicente López a Pilar)", region: "GBA" },
-      { id: 4, name: "GBA Oeste (Morón a Luján)", region: "GBA" },
-      { id: 5, name: "GBA Sur (Avellaneda a La Plata)", region: "GBA" },
-      { id: 6, name: "Región Centro (Córdoba y Santa Fe)", region: "Interior" },
-      { id: 7, name: "Región Cuyo y NOA (Mendoza, Tucumán, Salta)", region: "Interior" },
-      { id: 8, name: "Región Patagonia y Costa Atlántica", region: "Interior" }
-    ];
-
-    const stores = [
-      { id: 1, code: "LOC-001", name: "Sucursal Palermo Soho", city: "CABA", region: "CABA", zone_id: 1, address: "Av. Santa Fe 4250", is_active: true },
-      { id: 2, code: "LOC-002", name: "Sucursal Belgrano Cabildo", city: "CABA", region: "CABA", zone_id: 1, address: "Av. Cabildo 2140", is_active: true },
-      { id: 5, code: "LOC-005", name: "Sucursal San Isidro Centro", city: "San Isidro", region: "GBA", zone_id: 3, address: "Av. Centenario 650", is_active: true },
-      { id: 10, code: "LOC-010", name: "Sucursal Córdoba Nueva Córdoba", city: "Córdoba", region: "Interior", zone_id: 6, address: "Bv. Chacabuco 620", is_active: true }
-    ];
-
+    // Equipos HVAC asociados a locales reales del padrón de Octubre (Local 254, Local 394, Local 311, Local 607)
     let assets = [
       {
-        id: 1, store_id: 1, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC001-RT01",
+        id: 1, store_id: 254, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC254-RT01",
         qr_code_uuid: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         brand: "Carrier", model: "50TC-D12 WeatherMaster", serial_number: "SN-CAR-2023-8812",
         location_in_store: "Azotea Técnica - Salón Principal", criticality: "critica", status: "operativo",
@@ -594,7 +712,7 @@
         technical_specs: { caudal_m3h: 6800, consumo_nominal_amp: 18.4, compresores_scroll: 2, filtros_medida: "600x600x50mm G4", presion_baja_psi: 118 }
       },
       {
-        id: 2, store_id: 1, asset_type_id: 2, type: "Piso-Techo", tag_code: "HVAC-LOC001-PT01",
+        id: 2, store_id: 394, asset_type_id: 2, type: "Piso-Techo", tag_code: "HVAC-LOC394-PT01",
         qr_code_uuid: "b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
         brand: "Surrey", model: "651QFB060 Piso-Techo", serial_number: "SN-SUR-2022-4410",
         location_in_store: "Salón de Ventas Sector Cajas", criticality: "alta", status: "con_falla",
@@ -603,7 +721,7 @@
         technical_specs: { caudal_m3h: 2100, consumo_nominal_amp: 9.2, bomba_condensado: true, presion_baja_psi: 115 }
       },
       {
-        id: 3, store_id: 2, asset_type_id: 1, type: "Split Muro", tag_code: "HVAC-LOC002-SM01",
+        id: 3, store_id: 311, asset_type_id: 1, type: "Split Muro", tag_code: "HVAC-LOC311-SM01",
         qr_code_uuid: "e4eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
         brand: "Midea", model: "MSAG-6000 Xtreme Save", serial_number: "SN-MID-2023-7721",
         location_in_store: "Oficina Gerencia y Rack IT", criticality: "critica", status: "en_reparacion",
@@ -612,10 +730,10 @@
         technical_specs: { caudal_m3h: 950, consumo_nominal_amp: 7.5, uso_24x7_rack_it: true, setpoint_c: 21 }
       },
       {
-        id: 4, store_id: 10, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC010-RT01",
+        id: 4, store_id: 607, asset_type_id: 3, type: "Rooftop", tag_code: "HVAC-LOC607-RT01",
         qr_code_uuid: "27eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
         brand: "Carrier", model: "50TC-D08", serial_number: "SN-CAR-2022-5501",
-        location_in_store: "Azotea Nueva Córdoba", criticality: "critica", status: "con_falla",
+        location_in_store: "Azotea Nueva Córdoba (Chacabuco 727)", criticality: "critica", status: "con_falla",
         capacity_kcal_fg: 22500, refrigerant_type: "R410A", power_supply: "380V Trifásico",
         installation_date: "2022-10-14", warranty_expiration: "2025-10-14",
         technical_specs: { caudal_m3h: 5100, consumo_nominal_amp: 14.2, filtros_medida: "500x500x50mm G4" }
@@ -626,24 +744,24 @@
 
     let tickets = [
       {
-        id: 1, ticket_number: "TCK-2026-0001", store_id: 1, asset_id: 2,
+        id: 1, ticket_number: "TCK-2026-0001", store_id: 394, asset_id: 2,
         failure_symptom: "Pérdida de agua / Goteo interior", priority: "alta",
-        description: "El equipo Piso-Techo sobre la línea de cajas N° 2 gotea de forma continua sobre el mostrador.",
+        description: "El equipo Piso-Techo en Local 394 (Av. Santa Fe 4491, Palermo) gotea sobre línea de cajas.",
         status: "en_visita", technician: "Carlos Rodríguez",
         reported_at: "19/10/2026 09:15", resolved_at: null, resolution_comment: null
       },
       {
-        id: 2, ticket_number: "TCK-2026-0002", store_id: 2, asset_id: 3,
+        id: 2, ticket_number: "TCK-2026-0002", store_id: 311, asset_id: 3,
         failure_symptom: "No enfría / Compresor no acopla", priority: "critica",
-        description: "El Split del cuarto de Rack IT marca error E4 y la temperatura subió a 29°C.",
+        description: "El Split del cuarto de Rack IT en Local 311 (Av. Monroe 2771, Belgrano) marca error E4.",
         status: "asignado", technician: "Carlos Rodríguez",
         reported_at: "19/10/2026 11:10", resolved_at: null, resolution_comment: null
       },
       {
-        id: 3, ticket_number: "TCK-2026-0004", store_id: 1, asset_id: 1,
+        id: 3, ticket_number: "TCK-2026-0004", store_id: 254, asset_id: 1,
         failure_symptom: "Bajo rendimiento / Filtros saturados", priority: "media",
-        description: "Bajo caudal de aire en difusores centrales del salón.",
-        status: "resuelto", technician: "Carlos Rodríguez",
+        description: "Bajo caudal de aire en difusores centrales del Local 254 (Av. Diego Carman 451, San Isidro).",
+        status: "resuelto", technician: "Ignacio Portillo",
         reported_at: "10/10/2026 09:00", resolved_at: "10/10/2026 13:30",
         resolution_comment: "Se reemplazaron 4 filtros G4 colmatados, se limpió serpentina y se verificaron presiones (118 PSI baja)."
       }
@@ -652,13 +770,17 @@
     let preventives = [
       {
         id: 1, asset_id: 1, plan_id: 2, plan_name: "Preventivo Trimestral Rooftop Alta Capacidad (ISO 55000)",
-        executed_at: "09/10/2026 15:20", technician: "Carlos Rodríguez",
-        observations: "Equipo Rooftop Carrier en óptimas condiciones. Correas ajustadas y filtros G4 nuevos.",
+        executed_at: "09/10/2026 15:20", technician: "Ignacio Portillo",
+        observations: "Equipo Rooftop Carrier en Local 254 en óptimas condiciones. Correas ajustadas y filtros G4 nuevos.",
         results: { filtros_limpios: true, presion_baja_psi: 119, corriente_amp: 18.1 },
-        signature: "Conformidad: Sofía Peralta (Encargada LOC-001)",
+        signature: "Conformidad: Ezequiel Bresso (Jefe de Tienda Local 254)",
         sync_offline_id: "99eebc99-9c0b-4ef8-bb6d-6bb9bd380a99"
       }
     ];
+
+    function findStoreById(storeId) {
+      return stores.find((s) => Number(s.id) === Number(storeId) || String(s.nro_local) === String(storeId)) || stores[0];
+    }
 
     function generateUuid() {
       return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
@@ -677,6 +799,148 @@
     }
 
     // ============================================================================
+    // GESTIÓN DE LA RED DE LOCALES (SUMAR APERTURAS Y QUITAR POR CIERRE)
+    // ============================================================================
+    function openNewStoreModal() {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado: El rol Técnico no puede dar de alta ni cerrar sucursales.", true);
+        return;
+      }
+      document.getElementById("newStoreModal").style.display = "flex";
+    }
+    function closeNewStoreModal() {
+      document.getElementById("newStoreModal").style.display = "none";
+    }
+
+    function handleCreateStore(e) {
+      e.preventDefault();
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado.", true);
+        return;
+      }
+      const nro = document.getElementById("st_nro").value.trim();
+      const dir = document.getElementById("st_dir").value.trim();
+      const loc = document.getElementById("st_loc").value.trim();
+      const barrio = document.getElementById("st_barrio").value.trim() || loc;
+      const zona = Number(document.getElementById("st_zona").value);
+
+      if (stores.some((s) => String(s.nro_local) === nro)) {
+        showToast(`El Local N° ${nro} ya existe en la base. Si estaba cerrado podés reactivarlo.`, true);
+        return;
+      }
+
+      const newStore = {
+        id: Number(nro),
+        nro_local: nro,
+        code: "LOC-" + nro,
+        name: `Local ${nro} - ${barrio}`,
+        address: dir,
+        direccion: dir,
+        barrio: barrio,
+        city: loc,
+        localidad: loc,
+        cod_postal: "Apertura",
+        zone_id: zona,
+        zona: zona,
+        is_active: true,
+        status_store: "abierto",
+        closed_reason: null,
+        updated_at: new Date().toISOString().slice(0, 10)
+      };
+
+      stores.unshift(newStore);
+      persistStores();
+      closeNewStoreModal();
+
+      if (fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "stores", newStore.code, newStore).catch(() => {});
+      }
+
+      currentTab = "stores";
+      updateHeaderAndTabs();
+      render();
+      showToast(`¡Local N° ${nro} (${dir} - ${loc}, Zona ${zona}) sumado a la red activa!`);
+    }
+
+    function closeStoreByClosure(nroLocal) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) {
+        showToast("Permiso denegado: Solo Admin o Jefe de Mantenimiento pueden dar de baja locales por cierre.", true);
+        return;
+      }
+      const target = stores.find((s) => String(s.nro_local) === String(nroLocal));
+      if (!target) return;
+
+      const reason = prompt(
+        `¿Confirmás dar de baja por CIERRE al Local N° ${target.nro_local} (${target.direccion}, ${target.localidad} - Zona ${target.zona})?\n\nIngresá el motivo o fecha de cierre:`,
+        "Cierre definitivo de sucursal"
+      );
+      if (reason === null) return;
+
+      stores = stores.map((s) => {
+        if (String(s.nro_local) !== String(nroLocal)) return s;
+        return {
+          ...s,
+          is_active: false,
+          status_store: "cerrado",
+          closed_reason: reason || "Cierre de sucursal",
+          updated_at: new Date().toISOString().slice(0, 10)
+        };
+      });
+      persistStores();
+
+      const updated = stores.find((s) => String(s.nro_local) === String(nroLocal));
+      if (updated && fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "stores", updated.code, updated).catch(() => {});
+      }
+      render();
+      showToast(`Local N° ${nroLocal} dado de baja por cierre. Ya no figura en los locales operativos.`);
+    }
+
+    function reactivateStore(nroLocal) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) return;
+      stores = stores.map((s) => {
+        if (String(s.nro_local) !== String(nroLocal)) return s;
+        return {
+          ...s,
+          is_active: true,
+          status_store: "abierto",
+          closed_reason: null,
+          updated_at: new Date().toISOString().slice(0, 10)
+        };
+      });
+      persistStores();
+      const updated = stores.find((s) => String(s.nro_local) === String(nroLocal));
+      if (updated && fbProjectId && !isOffline) {
+        writeFirestoreDoc(fbProjectId, fbApiKey, "stores", updated.code, updated).catch(() => {});
+      }
+      render();
+      showToast(`Local N° ${nroLocal} reactivado en el padrón operativo.`);
+    }
+
+    function deleteStorePermanently(nroLocal) {
+      const profile = ROLE_PROFILES[currentRole];
+      if (!profile.canCreateOrEditAssets) return;
+      if (!confirm(`¿Eliminar definitivamente el Local N° ${nroLocal} del listado?`)) return;
+      stores = stores.filter((s) => String(s.nro_local) !== String(nroLocal));
+      persistStores();
+      render();
+      showToast(`Local N° ${nroLocal} quitado definitivamente del padrón.`);
+    }
+
+    function resetOctoberStoresToDefault() {
+      if (!window.INITIAL_528_STORES) return;
+      if (!confirm("¿Restaurar el padrón original de los 528 locales de Octubre desde la hoja de Google Sheets?")) return;
+      stores = JSON.parse(JSON.stringify(window.INITIAL_528_STORES));
+      persistStores();
+      render();
+      showToast("Padrón restaurado a los 528 locales originales de Octubre.");
+    }
+
+    // ============================================================================
     // CAMBIO DE ROL / PANTALLA Y ENFORCEMENT DE PRIVILEGIOS
     // ============================================================================
     function switchRole(newRole) {
@@ -684,7 +948,6 @@
       currentRole = newRole;
       const profile = ROLE_PROFILES[currentRole];
 
-      // Si el nuevo rol no puede acceder a la pestaña actual, redirigir a Inicio
       if (currentTab === "firebase" && !profile.canModifyFirestoreDb) {
         currentTab = "home";
       }
@@ -692,7 +955,6 @@
         currentTab = "home";
       }
 
-      // Actualizar botones selectores de rol
       ["admin", "jefe_mantenimiento", "tecnico"].forEach((r) => {
         const btn = document.getElementById("roleBtn_" + r);
         if (!btn) return;
@@ -711,6 +973,7 @@
 
     function updateHeaderAndTabs() {
       const profile = ROLE_PROFILES[currentRole];
+      const activeStoresCount = stores.filter((s) => s.is_active !== false).length;
       document.getElementById("brandRoleIcon").textContent = profile.icon;
 
       const badgeEl = document.getElementById("roleHeaderBadge");
@@ -718,15 +981,8 @@
       badgeEl.textContent = profile.badgeText;
 
       document.getElementById("roleHeaderSubtitle").textContent =
-        `Usuario activo: ${profile.userName} (${profile.role}) • ${
-          profile.canModifyFirestoreDb
-            ? "Control Total + Base de Datos Firestore"
-            : profile.canCreateOrEditAssets
-              ? "Gestión de Activos HVAC y QR habilitada • Sin acceso a BD Firestore"
-              : "Operación Técnica y Escaneo QR • Sin permiso para cargar equipos ni modificar BD"
-        }`;
+        `Usuario: ${profile.userName} (${profile.role}) • ${activeStoresCount} Locales Activos en 20 Zonas`;
 
-      // Botones de acción superiores según privilegios del rol
       const topActions = document.getElementById("topActionButtons");
       let actionsHtml = `
         <button id="offlineToggleBtn" class="btn ${isOffline ? 'btn-amber' : 'btn-green'}" onclick="toggleOfflineMode()">
@@ -734,7 +990,6 @@
         </button>
       `;
 
-      // Solo ADMIN ve el botón de Base de Datos Firebase Firestore
       if (profile.canModifyFirestoreDb) {
         actionsHtml += `
           <button class="btn btn-amber" onclick="switchTab('firebase')">
@@ -743,9 +998,11 @@
         `;
       }
 
-      // Solo ADMIN y JEFE DE MANTENIMIENTO pueden Cargar Aires Acondicionados
       if (profile.canCreateOrEditAssets) {
         actionsHtml += `
+          <button class="btn btn-green" onclick="openNewStoreModal()">
+            ➕ Sumar Local
+          </button>
           <button class="btn btn-blue" onclick="openNewAssetModal()">
             + Cargar Aire Acondicionado (Genera QR)
           </button>
@@ -759,21 +1016,20 @@
       }
       topActions.innerHTML = actionsHtml;
 
-      // Pestañas de navegación según privilegios del rol
       const tabs = [
         { id: "home", label: `🏠 Pantalla ${profile.role === 'admin' ? 'Administrador' : profile.role === 'jefe_mantenimiento' ? 'Jefe Mantenimiento' : 'Técnico'}` },
-        { id: "assets", label: profile.canCreateOrEditAssets ? "🏢 1. Gestión de Activos HVAC & QR" : "🏢 1. Consulta de Equipos HVAC" },
+        { id: "stores", label: `🏪 Red de Locales (${activeStoresCount} Activos)` },
+        { id: "assets", label: profile.canCreateOrEditAssets ? "🏢 Activos HVAC & QR" : "🏢 Consulta Equipos HVAC" },
         { id: "asset_360", label: "🔍 Hoja de Vida al Escanear QR" },
-        { id: "tickets", label: "🛠️ 2. Solicitudes / Tickets" },
-        { id: "preventive", label: "📋 3. Checklists Preventivos & Firma" }
+        { id: "tickets", label: "🛠️ Solicitudes / Tickets" },
+        { id: "preventive", label: "📋 Checklists Preventivos & Firma" }
       ];
 
       if (profile.canViewKpis) {
-        tabs.push({ id: "kpis", label: "📊 4. KPIs (MTTR / MTBF / SLA)" });
+        tabs.push({ id: "kpis", label: "📊 KPIs (MTTR / MTBF / SLA)" });
       }
-      tabs.push({ id: "mobile", label: "📱 App Móvil Offline + Escáner QR" });
+      tabs.push({ id: "mobile", label: "📱 App Móvil + Escáner QR" });
 
-      // EXCLUSIVO ADMINISTRADOR: Pestaña de Base de Datos Firestore
       if (profile.canModifyFirestoreDb) {
         tabs.push({ id: "firebase", label: "🔥 Base de Datos Firestore (Solo Admin)" });
       }
@@ -785,7 +1041,6 @@
         </button>
       `).join("");
 
-      // Banner explicativo de privilegios activos
       const bannerEl = document.getElementById("privilegeBanner");
       const bgMap = {
         admin: "background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;",
@@ -798,7 +1053,7 @@
             <strong>${profile.icon} ${profile.title}:</strong> ${profile.description}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;font-weight:700;">
-            <span>Cargar/Editar Equipos HVAC: ${profile.canCreateOrEditAssets ? '✅ PERMITIDO' : '🔒 BLOQUEADO'}</span>
+            <span>Sumar/Cerrar Locales y Cargar Equipos: ${profile.canCreateOrEditAssets ? '✅ PERMITIDO' : '🔒 BLOQUEADO'}</span>
             <span>•</span>
             <span>Modificar BD Firestore: ${profile.canModifyFirestoreDb ? '✅ PERMITIDO (ADMIN)' : '🔒 BLOQUEADO'}</span>
           </div>
@@ -885,20 +1140,43 @@
       }
     }
 
-    // Guard de privilegios para Alta de Equipos HVAC
-    function openNewAssetModal() {
+    function populateStoreSelectInAssetModal(preselectedStoreId) {
+      const sel = document.getElementById("fa_store");
+      if (!sel) return;
+      const activeStores = stores.filter((s) => s.is_active !== false);
+      sel.innerHTML = activeStores.map((s) => `
+        <option value="${s.id}" ${Number(s.id) === Number(preselectedStoreId) ? "selected" : ""}>
+          Local ${s.nro_local} — ${s.direccion} (${s.barrio ? s.barrio + ', ' : ''}${s.localidad} • Zona ${s.zona})
+        </option>
+      `).join("");
+      updateSuggestedTagCode();
+    }
+
+    function updateSuggestedTagCode() {
+      const sel = document.getElementById("fa_store");
+      const typeEl = document.getElementById("fa_type");
+      const tagEl = document.getElementById("fa_tag");
+      if (!sel || !typeEl || !tagEl) return;
+      const stId = sel.value;
+      const prefixMap = { "Split Muro": "SM", "Piso-Techo": "PT", "Rooftop": "RT", "Cortina de Aire": "CA" };
+      const codePrefix = prefixMap[typeEl.value] || "AC";
+      const existingInStore = assets.filter((a) => Number(a.store_id) === Number(stId)).length + 1;
+      tagEl.value = `HVAC-LOC${stId}-${codePrefix}0${existingInStore}`;
+    }
+
+    function openNewAssetModal(preselectedStoreId) {
       const profile = ROLE_PROFILES[currentRole];
       if (!profile.canCreateOrEditAssets) {
         showToast("Permiso denegado: El perfil Técnico no tiene privilegios para cargar nuevos equipos HVAC.", true);
         return;
       }
+      populateStoreSelectInAssetModal(preselectedStoreId || 254);
       document.getElementById("newAssetModal").style.display = "flex";
     }
     function closeNewAssetModal() {
       document.getElementById("newAssetModal").style.display = "none";
     }
 
-    // Guard de privilegios para Edición de Equipos HVAC (Admin y Jefe de Mantenimiento)
     function openEditAssetModal(assetId) {
       const profile = ROLE_PROFILES[currentRole];
       if (!profile.canCreateOrEditAssets) {
@@ -924,10 +1202,7 @@
     function handleUpdateAsset(e) {
       e.preventDefault();
       const profile = ROLE_PROFILES[currentRole];
-      if (!profile.canCreateOrEditAssets) {
-        showToast("Permiso denegado para modificar activos.", true);
-        return;
-      }
+      if (!profile.canCreateOrEditAssets) return;
       const id = Number(document.getElementById("ea_id").value);
       assets = assets.map((a) => {
         if (a.id !== id) return a;
@@ -985,19 +1260,19 @@
       if (fbProjectId && !isOffline) {
         writeFirestoreDoc(fbProjectId, fbApiKey, "assets", created.tag_code, created).catch(() => {});
       }
-      showToast(`Aire acondicionado ${created.tag_code} cargado por ${profile.userName} y etiqueta QR generada.`);
+      showToast(`Aire acondicionado ${created.tag_code} asociado al Local N° ${created.store_id} y etiqueta QR generada.`);
     }
 
     function openQrPrintModal(assetIds) {
       const list = assets.filter((a) => assetIds.includes(a.id));
       const container = document.getElementById("qrPrintBody");
       container.innerHTML = list.map((a) => {
-        const store = stores.find((s) => s.id === a.store_id) || stores[0];
+        const store = findStoreById(a.store_id);
         return `
           <div style="border:2px solid #0f172a;border-radius:12px;padding:14px;background:#fff;">
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid #cbd5e1;padding-bottom:6px;margin-bottom:10px;">
               <span style="background:#0f172a;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;">RED 528 • ACTIVO HVAC</span>
-              <strong style="font-size:11px;">${store.code}</strong>
+              <strong style="font-size:11px;">LOCAL N° ${store.nro_local} (Zona ${store.zona})</strong>
             </div>
             <div style="display:flex;gap:12px;align-items:center;">
               <div style="border:1px solid #cbd5e1;padding:4px;border-radius:8px;">
@@ -1006,7 +1281,7 @@
               <div style="font-size:12px;">
                 <div class="mono" style="font-weight:900;font-size:15px;">${a.tag_code}</div>
                 <div style="font-weight:700;">${a.type} • ${a.brand} ${a.model}</div>
-                <div style="color:#475569;font-size:11px;">📍 ${store.name} (${a.location_in_store})</div>
+                <div style="color:#475569;font-size:11px;">📍 ${store.direccion}, ${store.localidad} (${a.location_in_store})</div>
                 <div class="mono" style="color:#64748b;font-size:10px;margin-top:3px;">UUID: ${a.qr_code_uuid.slice(0, 18)}...</div>
               </div>
             </div>
@@ -1026,10 +1301,7 @@
 
     function assignTechnicianToTicket(ticketId, techName) {
       const profile = ROLE_PROFILES[currentRole];
-      if (!profile.canAssignTechnicians) {
-        showToast("Solo el Jefe de Mantenimiento o Administrador pueden reasignar técnicos.", true);
-        return;
-      }
+      if (!profile.canAssignTechnicians) return;
       tickets = tickets.map((t) => {
         if (t.id !== ticketId) return t;
         return { ...t, technician: techName, status: t.status === "abierto" ? "asignado" : t.status };
@@ -1238,15 +1510,51 @@
       return res.json();
     }
 
-    function copyFirestoreRulesSnippet() {
-      const rulesText = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`;
-      navigator.clipboard.writeText(rulesText);
-      showToast("Reglas copiadas al portapapeles.");
+    async function syncAll528StoresToFirestore() {
+      if (!ROLE_PROFILES[currentRole].canModifyFirestoreDb) {
+        showToast("Acceso denegado: Solo el Administrador puede ejecutar la sincronización masiva en Firestore.", true);
+        return;
+      }
+      const statusBox = document.getElementById("fbSeedStatus");
+      if (statusBox) {
+        statusBox.style.background = "#eff6ff";
+        statusBox.style.borderColor = "#93c5fd";
+      }
+
+      try {
+        // Subir las 20 zonas primero
+        for (const z of zones) {
+          await writeFirestoreDoc(fbProjectId, fbApiKey, "zones", "zone_" + z.id, z);
+        }
+        // Subir los locales en lotes paralelos de 25 para máxima velocidad
+        const batchSize = 25;
+        for (let i = 0; i < stores.length; i += batchSize) {
+          const slice = stores.slice(i, i + batchSize);
+          if (statusBox) {
+            statusBox.innerHTML = `⏳ Subiendo padrón de Octubre a Cloud Firestore (<b>${Math.min(i + batchSize, stores.length)} / ${stores.length} locales</b>)...`;
+          }
+          await Promise.all(
+            slice.map((st) => writeFirestoreDoc(fbProjectId, fbApiKey, "stores", st.code, st))
+          );
+        }
+        if (statusBox) {
+          statusBox.style.background = "#ecfdf5";
+          statusBox.style.borderColor = "#6ee7b7";
+          statusBox.innerHTML = `✅ <b>¡Los ${stores.length} locales de Octubre y las 20 Zonas fueron cargados en Firebase Cloud Firestore (${fbProjectId})!</b>`;
+        }
+        showToast(`¡${stores.length} locales sincronizados en Cloud Firestore (${fbProjectId})!`);
+      } catch (err) {
+        if (statusBox) {
+          statusBox.style.background = "#fef2f2";
+          statusBox.style.borderColor = "#fecaca";
+          statusBox.innerHTML = `⚠️ Error al subir locales a Firestore: <b>${err.message}</b>`;
+        }
+        showToast("Error al sincronizar con Firestore.", true);
+      }
     }
 
     async function seedCloudFirestoreFromBrowser(e) {
       e.preventDefault();
-      // Guard estricto: Solo el Administrador puede modificar masivamente la base de datos Firestore
       if (!ROLE_PROFILES[currentRole].canModifyFirestoreDb) {
         showToast("Acceso denegado: Solo el Administrador tiene privilegios para modificar la base de datos Firestore.", true);
         return;
@@ -1254,10 +1562,7 @@
 
       const projectId = document.getElementById("fb_project_id").value.trim();
       const apiKey = document.getElementById("fb_api_key").value.trim();
-      if (!projectId) {
-        showToast("Ingresá el Project ID de tu proyecto de Firebase.", true);
-        return;
-      }
+      if (!projectId) return;
       localStorage.setItem("cmms_fb_project_id", projectId);
       localStorage.setItem("cmms_fb_api_key", apiKey);
       fbProjectId = projectId;
@@ -1266,12 +1571,11 @@
       const statusBox = document.getElementById("fbSeedStatus");
       statusBox.style.background = "#eff6ff";
       statusBox.style.borderColor = "#93c5fd";
-      statusBox.innerHTML = "⏳ Conectando con Cloud Firestore (<b>" + projectId + "</b>) y escribiendo colecciones...";
+      statusBox.innerHTML = "⏳ Conectando con Cloud Firestore (<b>" + projectId + "</b>) y escribiendo colecciones base...";
 
       try {
         let count = 0;
         for (const z of zones) { await writeFirestoreDoc(projectId, apiKey, "zones", "zone_" + z.id, z); count++; }
-        for (const s of stores) { await writeFirestoreDoc(projectId, apiKey, "stores", s.code, s); count++; }
         for (const u of users) { await writeFirestoreDoc(projectId, apiKey, "users", "user_" + u.id, u); count++; }
         for (const c of assetCategories) { await writeFirestoreDoc(projectId, apiKey, "asset_categories", c.code, c); count++; }
         for (const at of assetTypes) { await writeFirestoreDoc(projectId, apiKey, "asset_types", "type_" + at.id, at); count++; }
@@ -1281,7 +1585,7 @@
 
         statusBox.style.background = "#ecfdf5";
         statusBox.style.borderColor = "#6ee7b7";
-        statusBox.innerHTML = `✅ <b>¡Base de datos Firestore sincronizada por el Administrador!</b><br/>Se actualizaron <b>${count} documentos</b> en <code>${projectId}</code>.`;
+        statusBox.innerHTML = `✅ <b>¡Colecciones operativas sincronizadas (${count} documentos)!</b> Tocá el botón verde de al lado si querés subir el lote completo de los ${stores.length} locales de Octubre.`;
         showToast(`¡${count} documentos sincronizados en Cloud Firestore (${projectId})!`);
       } catch (err) {
         statusBox.style.background = "#fef2f2";
@@ -1299,45 +1603,239 @@
       const profile = ROLE_PROFILES[currentRole];
       const selectedAsset = assets.find((a) => a.id === selectedAssetId) || assets[0];
       const openTicketsCount = tickets.filter((t) => t.status !== "resuelto").length;
+      const activeStores = stores.filter((s) => s.is_active !== false);
+      const closedStores = stores.filter((s) => s.is_active === false);
+
+      // --------------------------------------------------------------------------
+      // PESTAÑA RED DE LOCALES (528 LOCALES REALES DE OCTUBRE + ALTA Y BAJA POR CIERRE)
+      // --------------------------------------------------------------------------
+      if (currentTab === "stores") {
+        const filteredStores = stores.filter((s) => {
+          if (storeFilterStatus === "ACTIVOS" && s.is_active === false) return false;
+          if (storeFilterStatus === "CERRADOS" && s.is_active !== false) return false;
+          if (storeFilterLocalidad !== "TODAS" && String(s.localidad).toUpperCase() !== storeFilterLocalidad) return false;
+          if (storeFilterZona !== "TODAS" && Number(s.zona) !== Number(storeFilterZona)) return false;
+          if (storeSearchQuery.trim() !== "") {
+            const q = storeSearchQuery.trim().toLowerCase();
+            return (
+              String(s.nro_local).toLowerCase().includes(q) ||
+              String(s.direccion || s.address || "").toLowerCase().includes(q) ||
+              String(s.barrio || "").toLowerCase().includes(q) ||
+              String(s.localidad || "").toLowerCase().includes(q)
+            );
+          }
+          return true;
+        });
+
+        const visibleStores = filteredStores.slice(0, storePageLimit);
+
+        container.innerHTML = `
+          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+            <div>
+              <span class="badge badge-blue">Base Oficial Octubre • Google Sheets Importado</span>
+              <h2 style="font-size:21px;margin-top:4px;">🏪 Padrón de Red de Locales (Nro de Local, Dirección, Localidad y Zona)</h2>
+              <p style="font-size:13px;color:var(--slate-600);">
+                Base completa con los <b>${stores.length} locales registrados</b> (${activeStores.length} abiertos operativos y ${closedStores.length} dados de baja por cierre) distribuidos en las <b>20 Zonas</b>.
+              </p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              ${profile.canCreateOrEditAssets ? `
+                <button class="btn btn-green" onclick="openNewStoreModal()">➕ Sumar Nuevo Local (Apertura)</button>
+                <button class="btn btn-outline" onclick="resetOctoberStoresToDefault()">🔄 Restaurar Base Octubre (528)</button>
+              ` : `
+                <span class="badge badge-amber" style="padding:8px 12px;">🔒 Rol Técnico: Solo lectura del padrón de locales</span>
+              `}
+            </div>
+          </div>
+
+          <div class="grid-4" style="margin-bottom:16px;">
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Locales Operativos (Abiertos)</span>
+              <div style="font-size:28px;font-weight:900;color:var(--emerald-600);margin-top:4px;">${activeStores.length}</div>
+              <div style="font-size:12px;color:var(--slate-500);margin-top:2px;">Habilitados para equipos HVAC y tickets</div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Bajas por Cierre</span>
+              <div style="font-size:28px;font-weight:900;color:var(--red-600);margin-top:4px;">${closedStores.length}</div>
+              <div style="font-size:12px;color:var(--slate-500);margin-top:2px;">Locales cerrados o inactivos</div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Distribución AMBA</span>
+              <div style="font-size:14px;font-weight:800;margin-top:8px;">
+                • CABA: ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'CABA').length} locales<br/>
+                • GBA: ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'GBA').length} locales
+              </div>
+            </div>
+            <div class="card">
+              <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Distribución Interior</span>
+              <div style="font-size:13px;font-weight:800;margin-top:6px;">
+                • CÓRDOBA: ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'CORDOBA').length} locales<br/>
+                • MENDOZA: ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'MENDOZA').length} locales<br/>
+                • SALTA: ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'SALTA').length} locales
+              </div>
+            </div>
+          </div>
+
+          <!-- BARRA DE BÚSQUEDA Y FILTROS DE LOCALES -->
+          <div class="card" style="margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
+              <div>
+                <label>🔎 Buscar por Nro de Local, Dirección o Barrio</label>
+                <input
+                  class="input"
+                  placeholder="Ej: 254, Santa Fe, San Isidro, Chacabuco..."
+                  value="${storeSearchQuery}"
+                  oninput="storeSearchQuery=this.value;storePageLimit=60;render();"
+                />
+              </div>
+              <div>
+                <label>Filtrar por Localidad</label>
+                <select class="input" onchange="storeFilterLocalidad=this.value;storePageLimit=60;render();">
+                  <option value="TODAS" ${storeFilterLocalidad === 'TODAS' ? 'selected' : ''}>Todas las Localidades</option>
+                  <option value="CABA" ${storeFilterLocalidad === 'CABA' ? 'selected' : ''}>CABA</option>
+                  <option value="GBA" ${storeFilterLocalidad === 'GBA' ? 'selected' : ''}>GBA</option>
+                  <option value="CORDOBA" ${storeFilterLocalidad === 'CORDOBA' ? 'selected' : ''}>CORDOBA</option>
+                  <option value="MENDOZA" ${storeFilterLocalidad === 'MENDOZA' ? 'selected' : ''}>MENDOZA</option>
+                  <option value="SALTA" ${storeFilterLocalidad === 'SALTA' ? 'selected' : ''}>SALTA</option>
+                </select>
+              </div>
+              <div>
+                <label>Filtrar por Zona (1 a 20)</label>
+                <select class="input" onchange="storeFilterZona=this.value;storePageLimit=60;render();">
+                  <option value="TODAS" ${storeFilterZona === 'TODAS' ? 'selected' : ''}>Todas las Zonas (1 a 20)</option>
+                  ${zones.map((z) => `<option value="${z.id}" ${String(storeFilterZona) === String(z.id) ? 'selected' : ''}>Zona ${z.id} (${z.region})</option>`).join("")}
+                </select>
+              </div>
+              <div>
+                <label>Estado de Sucursal</label>
+                <select class="input" onchange="storeFilterStatus=this.value;storePageLimit=60;render();">
+                  <option value="ACTIVOS" ${storeFilterStatus === 'ACTIVOS' ? 'selected' : ''}>🟢 Solo Locales Activos (${activeStores.length})</option>
+                  <option value="CERRADOS" ${storeFilterStatus === 'CERRADOS' ? 'selected' : ''}>🔴 Dados de Baja por Cierre (${closedStores.length})</option>
+                  <option value="TODOS" ${storeFilterStatus === 'TODOS' ? 'selected' : ''}>Todos (${stores.length})</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nro de Local</th>
+                  <th>Dirección</th>
+                  <th>Localidad / Barrio</th>
+                  <th>Zona</th>
+                  <th>Equipos HVAC</th>
+                  <th>Estado</th>
+                  <th style="text-align:right;">Acciones (Cargar Equipo / Cierre)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${visibleStores.length === 0 ? `
+                  <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--slate-500);">No se encontraron locales con ese criterio de búsqueda.</td></tr>
+                ` : visibleStores.map((s) => {
+                  const storeAssetsCount = assets.filter((a) => Number(a.store_id) === Number(s.id)).length;
+                  const isClosed = s.is_active === false;
+                  return `
+                    <tr style="${isClosed ? 'opacity:0.65;background:#fef2f2;' : ''}">
+                      <td>
+                        <span class="mono badge ${isClosed ? 'badge-red' : 'badge-blue'}" style="font-size:13px;">N° ${s.nro_local}</span>
+                      </td>
+                      <td>
+                        <div style="font-weight:700;color:var(--slate-900);">${s.direccion || s.address}</div>
+                        ${s.cod_postal ? `<div style="font-size:11px;color:var(--slate-500);">CP: ${s.cod_postal}</div>` : ''}
+                      </td>
+                      <td>
+                        <span class="badge badge-purple">${s.localidad}</span>
+                        <span style="font-size:12px;color:var(--slate-600);margin-left:6px;">${s.barrio || ''}</span>
+                      </td>
+                      <td>
+                        <strong style="font-size:13px;">Zona ${s.zona}</strong>
+                      </td>
+                      <td>
+                        <span class="badge ${storeAssetsCount > 0 ? 'badge-green' : 'badge-amber'}">${storeAssetsCount} equipo(s)</span>
+                      </td>
+                      <td>
+                        ${isClosed
+                          ? `<span class="badge badge-red">CERRADO (${s.closed_reason || 'Baja'})</span>`
+                          : `<span class="badge badge-green">ABIERTO</span>`}
+                      </td>
+                      <td style="text-align:right;">
+                        <div style="display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                          ${profile.canCreateOrEditAssets ? (
+                            !isClosed ? `
+                              <button class="btn btn-blue" style="padding:5px 9px;font-size:11px;" onclick="openNewAssetModal(${s.id})">+ Equipo HVAC</button>
+                              <button class="btn btn-red" style="padding:5px 9px;font-size:11px;" onclick="closeStoreByClosure('${s.nro_local}')">🚫 Quitar por Cierre</button>
+                            ` : `
+                              <button class="btn btn-green" style="padding:5px 9px;font-size:11px;" onclick="reactivateStore('${s.nro_local}')">🔄 Reactivar</button>
+                              <button class="btn btn-outline" style="padding:5px 9px;font-size:11px;" onclick="deleteStorePermanently('${s.nro_local}')">🗑️ Eliminar</button>
+                            `
+                          ) : `<span style="font-size:11px;color:var(--slate-500);">Solo lectura</span>`}
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+
+          ${filteredStores.length > visibleStores.length ? `
+            <div style="text-align:center;margin-top:16px;">
+              <button class="btn btn-dark" onclick="storePageLimit += 100; render();">
+                Mostrar más locales (${visibleStores.length} de ${filteredStores.length} mostrados) ↓
+              </button>
+              <button class="btn btn-outline" style="margin-left:8px;" onclick="storePageLimit = 1000; render();">
+                Ver los ${filteredStores.length} locales completos
+              </button>
+            </div>
+          ` : `
+            <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--slate-500);">
+              Mostrando ${visibleStores.length} de ${filteredStores.length} locales filtrados.
+            </div>
+          `}
+        `;
+        return;
+      }
 
       // --------------------------------------------------------------------------
       // PESTAÑA INICIAL (DIFERENCIADA PARA ADMIN, JEFE DE MANTENIMIENTO Y TÉCNICO)
       // --------------------------------------------------------------------------
       if (currentTab === "home") {
-        // 1. PANTALLA ADMINISTRADOR
         if (currentRole === "admin") {
           container.innerHTML = `
             <div class="hero">
               <div style="max-width:700px;">
                 <span class="badge badge-blue" style="margin-bottom:8px;">🛡️ PANTALLA 1 • ADMINISTRADOR DEL SISTEMA (CONTROL TOTAL)</span>
-                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Panel de Administración General & Base de Datos Firestore</h2>
+                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Panel de Administración General — ${activeStores.length} Locales Activos</h2>
                 <p style="font-size:13px;color:#cbd5e1;">
-                  Tenés todos los privilegios habilitados: alta y edición de aires acondicionados (HVAC), generación de etiquetas QR, gestión de tickets, KPIs gerenciales y <b>acceso exclusivo a la administración de la base de datos Firebase Cloud Firestore (${fbProjectId})</b>.
+                  Base oficial de Octubre cargada (${stores.length} locales en 20 Zonas). Podés sumar locales por apertura o quitarlos por cierre, dar de alta equipos HVAC con código QR y administrar <b>Firebase Cloud Firestore (${fbProjectId})</b>.
                 </p>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
-                <button class="btn btn-amber" onclick="switchTab('firebase')">🔥 Administrar Base de Datos Firestore</button>
+                <button class="btn btn-green" onclick="switchTab('stores')">🏪 Gestionar los ${activeStores.length} Locales</button>
+                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y QR</button>
+                <button class="btn btn-amber" onclick="switchTab('firebase')">🔥 Administrar BD Firestore</button>
               </div>
             </div>
 
             <div class="grid-4" style="margin-bottom:20px;">
-              <div class="card">
-                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Red Nacional Activa</span>
-                <div style="font-size:28px;font-weight:900;margin-top:4px;">528 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">locales</span></div>
-                <div style="font-size:12px;color:var(--slate-500);margin-top:4px;">8 Zonas (CABA, GBA e Interior)</div>
+              <div class="card card-interactive" onclick="switchTab('stores')">
+                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Red Octubre Activa</span>
+                <div style="font-size:28px;font-weight:900;margin-top:4px;">${activeStores.length} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">locales</span></div>
+                <div style="font-size:12px;color:var(--blue-600);margin-top:4px;">20 Zonas • ${closedStores.length} cerrados →</div>
               </div>
-              <div class="card">
+              <div class="card card-interactive" onclick="switchTab('assets')">
                 <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Activos HVAC Registrados</span>
                 <div style="font-size:28px;font-weight:900;margin-top:4px;">${assets.length} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">con QR único</span></div>
                 <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">Alta y edición habilitadas</div>
               </div>
-              <div class="card">
+              <div class="card card-interactive" onclick="switchTab('tickets')">
                 <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets Abiertos</span>
                 <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">activos</span></div>
                 <div style="font-size:12px;color:var(--amber-600);margin-top:4px;">Cumplimiento SLA Red: 92.4%</div>
               </div>
-              <div class="card">
+              <div class="card card-interactive" onclick="switchTab('firebase')">
                 <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Base de Datos Cloud Firestore</span>
                 <div class="mono" style="font-size:15px;font-weight:900;margin-top:8px;color:var(--blue-700);">${fbProjectId}</div>
                 <div style="font-size:12px;color:var(--emerald-600);margin-top:6px;">🔓 Escritura Admin Habilitada</div>
@@ -1346,10 +1844,15 @@
 
             <h3 style="font-size:16px;margin-bottom:12px;">Módulos Habilitados para el Administrador</h3>
             <div class="grid-3">
+              <div class="card card-interactive" onclick="switchTab('stores')">
+                <span class="badge badge-green">Base Octubre • ${activeStores.length} Locales</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🏪 Padrón de Locales (Sumar Aperturas / Quitar por Cierre)</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Listado oficial con Nro de Local, Dirección, Localidad y Zona (1 a 20). Permite sumar locales o dar de baja por cierre.</p>
+              </div>
               <div class="card card-interactive" onclick="switchTab('assets')">
                 <span class="badge badge-blue">Módulo 1 • Alta y Edición Habilitada</span>
                 <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Activos HVAC y Generador de Códigos QR</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Cargá nuevos aires acondicionados, editá equipos e imprimí sus etiquetas QR autoadhesivas.</p>
+                <p style="font-size:12px;color:var(--slate-600);">Cargá nuevos aires acondicionados en cualquiera de los 528 locales e imprimí sus etiquetas QR.</p>
               </div>
               <div class="card card-interactive" onclick="switchTab('asset_360')">
                 <span class="badge badge-green">Destino del Escaneo QR</span>
@@ -1366,63 +1869,38 @@
                 <h4 style="font-size:16px;margin:8px 0 4px;">📋 Planes Preventivos y Firma Digital</h4>
                 <p style="font-size:12px;color:var(--slate-600);">Ejecución y auditoría de checklists preventivos con mediciones y firma.</p>
               </div>
-              <div class="card card-interactive" onclick="switchTab('kpis')">
-                <span class="badge badge-amber">Módulo 4 • Indicadores</span>
-                <h4 style="font-size:16px;margin:8px 0 4px;">📊 KPIs Operativos (MTTR, MTBF y SLA)</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Tablero gerencial con métricas por región (CABA, GBA, Interior).</p>
-              </div>
               <div class="card card-interactive" onclick="switchTab('firebase')">
                 <span class="badge badge-amber">Exclusivo Administrador</span>
                 <h4 style="font-size:16px;margin:8px 0 4px;">🔥 Gestión de Base de Datos Cloud Firestore</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Configuración, reglas y poblado de colecciones en Firebase (bloqueado para Jefes y Técnicos).</p>
+                <p style="font-size:12px;color:var(--slate-600);">Sincronización del padrón de 528 locales y colecciones en Firebase (bloqueado para Jefes y Técnicos).</p>
               </div>
             </div>
           `;
           return;
         }
 
-        // 2. PANTALLA JEFE / GERENTE DE MANTENIMIENTO
         if (currentRole === "jefe_mantenimiento") {
           container.innerHTML = `
             <div class="hero hero-jefe">
               <div style="max-width:720px;">
                 <span class="badge badge-purple" style="margin-bottom:8px;">👔 PANTALLA 2 • JEFE / GERENTE DE MANTENIMIENTO</span>
-                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Gestión de Parque de Activos HVAC, Cuadrillas y SLA</h2>
+                <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Gestión de los ${activeStores.length} Locales, Activos HVAC y SLA</h2>
                 <p style="font-size:13px;color:#ddd6fe;">
-                  Tenés privilegios completos para <b>gestionar los activos HVAC</b> (dar de alta nuevos equipos, editar criticidad/estado y generar etiquetas QR), asignar técnicos a tickets y auditar KPIs. <b>Por seguridad corporativa, no tenés acceso a modificar ni re-estructurar la base de datos Firestore.</b>
+                  Podés <b>sumar locales o darlos de baja por cierre</b>, dar de alta y editar equipos HVAC, generar etiquetas QR y asignar técnicos. <b>No tenés acceso a modificar la configuración de la base de datos Firestore.</b>
                 </p>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y Generar QR</button>
-                <button class="btn btn-outline" onclick="switchTab('kpis')">📊 Ver Tablero KPIs / SLA</button>
+                <button class="btn btn-green" onclick="switchTab('stores')">🏪 Gestionar Locales (${activeStores.length})</button>
+                <button class="btn btn-blue" onclick="openNewAssetModal()">+ Cargar Aire Acondicionado y QR</button>
               </div>
             </div>
 
-            <div class="grid-4" style="margin-bottom:20px;">
-              <div class="card">
-                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Gestión de Activos HVAC</span>
-                <div style="font-size:28px;font-weight:900;margin-top:4px;">${assets.length} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">equipos</span></div>
-                <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">✅ Alta, Edición y QR Habilitados</div>
-              </div>
-              <div class="card">
-                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">MTTR / MTBF Red</span>
-                <div style="font-size:28px;font-weight:900;margin-top:4px;">3.75 <span style="font-size:14px;font-weight:500;color:var(--slate-500);">hs</span></div>
-                <div style="font-size:12px;color:var(--emerald-600);margin-top:4px;">MTBF: 958.4 hs • Disp: 94.8%</div>
-              </div>
-              <div class="card">
-                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Tickets por Supervisar</span>
-                <div style="font-size:28px;font-weight:900;margin-top:4px;">${openTicketsCount} <span style="font-size:14px;font-weight:500;color:var(--slate-500);">abiertos</span></div>
-                <div style="font-size:12px;color:var(--purple-600);margin-top:4px;">Asignación de técnicos activa</div>
-              </div>
-              <div class="card" style="background:#f8fafc;border-style:dashed;">
-                <span style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;">Base de Datos Firestore</span>
-                <div style="font-size:15px;font-weight:800;margin-top:8px;color:var(--slate-600);">🔒 Acceso Restringido</div>
-                <div style="font-size:11px;color:var(--slate-500);margin-top:4px;">Solo el Administrador puede modificar la estructura de BD</div>
-              </div>
-            </div>
-
-            <h3 style="font-size:16px;margin-bottom:12px;">Módulos de Gestión del Jefe / Gerente de Mantenimiento</h3>
             <div class="grid-3">
+              <div class="card card-interactive" onclick="switchTab('stores')">
+                <span class="badge badge-green">Padrón Octubre • 20 Zonas</span>
+                <h4 style="font-size:16px;margin:8px 0 4px;">🏪 Red de Locales (Sumar o Quitar por Cierre)</h4>
+                <p style="font-size:12px;color:var(--slate-600);">Administrá los ${activeStores.length} locales activos (Nro de Local, Dirección, Localidad y Zona).</p>
+              </div>
               <div class="card card-interactive" onclick="switchTab('assets')">
                 <span class="badge badge-purple">Gestión de Activos Habilitada</span>
                 <h4 style="font-size:16px;margin:8px 0 4px;">🏢 Alta, Edición de Activos HVAC y Etiquetas QR</h4>
@@ -1431,29 +1909,13 @@
               <div class="card card-interactive" onclick="switchTab('tickets')">
                 <span class="badge badge-red">${openTicketsCount} Tickets Activos</span>
                 <h4 style="font-size:16px;margin:8px 0 4px;">🛠️ Despacho y Asignación de Técnicos</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Asigná o reasigná técnicos tercerizados a cada ticket reportado por las tiendas y auditá las resoluciones.</p>
-              </div>
-              <div class="card card-interactive" onclick="switchTab('kpis')">
-                <span class="badge badge-amber">Gerencia de Mantenimiento</span>
-                <h4 style="font-size:16px;margin:8px 0 4px;">📊 Tablero de KPIs (MTTR, MTBF y SLA)</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Control de tiempos medios de reparación y cumplimiento de SLA en CABA, GBA e Interior.</p>
-              </div>
-              <div class="card card-interactive" onclick="switchTab('asset_360')">
-                <span class="badge badge-green">Auditoría Técnica 360°</span>
-                <h4 style="font-size:16px;margin:8px 0 4px;">🔍 Hoja de Vida e Historial por Equipo</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Inspeccioná la ficha JSONB y todas las intervenciones históricas realizadas sobre cada activo.</p>
-              </div>
-              <div class="card card-interactive" onclick="switchTab('preventive')">
-                <span class="badge badge-green">Planes Preventivos ISO 55000</span>
-                <h4 style="font-size:16px;margin:8px 0 4px;">📋 Control de Checklists Preventivos y Firmas</h4>
-                <p style="font-size:12px;color:var(--slate-600);">Verificá las lecturas de presión (PSI), consumo eléctrico (Amperes) y firmas de encargados de tienda.</p>
+                <p style="font-size:12px;color:var(--slate-600);">Asigná técnicos a cada ticket reportado por las tiendas y auditá las resoluciones.</p>
               </div>
             </div>
           `;
           return;
         }
 
-        // 3. PANTALLA TÉCNICO DE CAMPO
         if (currentRole === "tecnico") {
           const myTickets = tickets.filter((t) => t.status !== "resuelto");
           container.innerHTML = `
@@ -1462,21 +1924,21 @@
                 <span class="badge badge-green" style="margin-bottom:8px;">🧰 PANTALLA 3 • TÉCNICO DE CAMPO (OPERACIÓN Y ESCÁNER QR)</span>
                 <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;">Consola Operativa para Técnicos HVAC en Sucursal</h2>
                 <p style="font-size:13px;color:#d1fae5;">
-                  Bienvenido, <b>Carlos Rodríguez</b>. Desde esta pantalla podés escanear el código QR pegado en el equipo para ver sus datos técnicos e historial, atender tus tickets asignados y completar los checklists preventivos con firma. <b>No tenés permisos para dar de alta equipos nuevos ni modificar la base de datos Firestore.</b>
+                  Podés consultar las direcciones de los ${activeStores.length} locales, escanear el código QR del equipo, atender tickets y firmar checklists preventivos. <b>No tenés permisos para cargar equipos nuevos ni modificar la base de datos Firestore.</b>
                 </p>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <button class="btn btn-green" onclick="switchTab('mobile')">📷 Escanear QR de Equipo</button>
-                <button class="btn btn-outline" onclick="switchTab('preventive')">📋 Completar Checklist Preventivo</button>
+                <button class="btn btn-outline" onclick="switchTab('stores')">🏪 Consultar Direcciones de Locales</button>
               </div>
             </div>
 
             <div class="grid-2-1">
               <div style="display:flex;flex-direction:column;gap:12px;">
                 <h3 style="font-size:17px;">🛠️ Mis Tickets Asignados en Sucursales (${myTickets.length} Pendientes)</h3>
-                ${myTickets.length === 0 ? `<div class="card">No tenés tickets pendientes en este momento.</div>` : myTickets.map((t) => {
+                ${myTickets.map((t) => {
                   const asset = assets.find((a) => a.id === t.asset_id) || assets[0];
-                  const store = stores.find((s) => s.id === t.store_id) || stores[0];
+                  const store = findStoreById(t.store_id);
                   return `
                     <div class="card">
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
@@ -1490,7 +1952,7 @@
                       <h4 style="font-size:15px;">${t.failure_symptom}</h4>
                       <p style="font-size:13px;color:var(--slate-600);margin:4px 0 8px;">${t.description}</p>
                       <div style="font-size:12px;color:var(--slate-600);margin-bottom:10px;">
-                        📍 <b>${store.code} - ${store.name}</b> (${store.address}) • Sector: <b>${asset.location_in_store}</b>
+                        📍 <b>Local N° ${store.nro_local}</b> — ${store.direccion}, ${store.localidad} (Zona ${store.zona}) • Sector: <b>${asset.location_in_store}</b>
                       </div>
                       <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:10px;">
                         ${t.status === "asignado" || t.status === "abierto" ? `
@@ -1506,19 +1968,13 @@
               <div class="card" style="height:fit-content;">
                 <span class="badge badge-green">Acceso Rápido QR</span>
                 <h3 style="font-size:16px;margin:8px 0;">📷 Simular Escaneo QR en Tienda</h3>
-                <p style="font-size:12px;color:var(--slate-600);margin-bottom:12px;">
-                  Seleccioná la etiqueta QR del equipo frente al cual te encontrás para abrir su Ficha Técnica e Historial de Reparaciones:
-                </p>
                 <div style="display:grid;gap:8px;">
                   ${assets.map((a) => `
                     <button class="btn btn-outline" style="justify-content:space-between;padding:10px;" onclick="scanAssetQr(${a.id})">
                       <span class="mono" style="color:var(--blue-700);font-weight:800;">🔍 ${a.tag_code}</span>
-                      <span>${a.type} (${a.brand}) →</span>
+                      <span>Local N° ${a.store_id} (${a.brand}) →</span>
                     </button>
                   `).join("")}
-                </div>
-                <div style="margin-top:14px;padding:10px;border-radius:8px;background:#f8fafc;border:1px dashed #cbd5e1;font-size:11px;color:var(--slate-500);">
-                  🔒 <b>Nota de Privilegios (Rol Técnico):</b> El alta de nuevos equipos HVAC está reservada al Jefe de Mantenimiento y al Administrador.
                 </div>
               </div>
             </div>
@@ -1532,55 +1988,51 @@
       // --------------------------------------------------------------------------
       if (currentTab === "firebase") {
         if (!profile.canModifyFirestoreDb) {
-          container.innerHTML = `
-            <div class="card" style="border-color:#fca5a5;background:#fef2f2;color:#991b1b;">
-              <h3>⛔ Acceso Restringido — Privilegio Exclusivo del Administrador</h3>
-              <p style="font-size:13px;margin-top:6px;">
-                Tu perfil actual (<b>${profile.title}</b>) no tiene permisos para modificar ni configurar la base de datos Firebase Cloud Firestore.
-              </p>
-            </div>
-          `;
+          container.innerHTML = `<div class="card">⛔ Acceso exclusivo para el Administrador.</div>`;
           return;
         }
         container.innerHTML = `
           <div class="grid-2-1">
             <div class="card">
               <span class="badge badge-amber">Exclusivo Administrador • Cloud Firestore</span>
-              <h2 style="font-size:20px;margin:6px 0;">🔥 Administración y Sincronización de Base de Datos Firestore</h2>
+              <h2 style="font-size:20px;margin:6px 0;">🔥 Administración de Base de Datos Firebase Cloud Firestore</h2>
               <p style="font-size:13px;color:var(--slate-600);margin-bottom:14px;">
-                Esta pantalla sólo está disponible para el <b>Administrador</b>. Los perfiles de <i>Jefe de Mantenimiento</i> y <i>Técnico</i> tienen bloqueado el acceso a esta configuración.
+                Desde aquí podés sincronizar tanto las colecciones operativas como el padrón completo de los <b>${stores.length} locales de Octubre</b> hacia tu base de datos <code>${fbProjectId}</code>.
               </p>
               <form onsubmit="seedCloudFirestoreFromBrowser(event)" style="display:grid;gap:12px;">
                 <div>
-                  <label>Firebase Project ID (obligatorio)</label>
+                  <label>Firebase Project ID</label>
                   <input id="fb_project_id" class="input mono" value="${fbProjectId}" required />
                 </div>
                 <div>
                   <label>Firebase Web API Key (opcional)</label>
                   <input id="fb_api_key" class="input mono" placeholder="AIzaSy..." value="${fbApiKey}" />
                 </div>
-                <button type="submit" class="btn btn-amber" style="padding:11px;font-size:13px;">
-                  🚀 Sincronizar / Sobrescribir Colecciones en Cloud Firestore (${fbProjectId})
-                </button>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <button type="submit" class="btn btn-amber" style="padding:11px;font-size:12px;">
+                    🚀 1. Sincronizar Equipos, Tickets y 20 Zonas
+                  </button>
+                  <button type="button" class="btn btn-green" style="padding:11px;font-size:12px;" onclick="syncAll528StoresToFirestore()">
+                    🏪 2. Subir los ${stores.length} Locales de Octubre a Firestore
+                  </button>
+                </div>
               </form>
               <div id="fbSeedStatus" style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--slate-700);">
-                Proyecto conectado: <code>${fbProjectId}</code>.
+                Proyecto conectado: <code>${fbProjectId}</code>. Cada vez que sumás un local nuevo o quitás uno por cierre en la pestaña <b>🏪 Red de Locales</b>, se actualiza automáticamente en Firestore.
               </div>
             </div>
 
             <div class="card" style="height:fit-content;">
-              <span class="badge badge-blue">Matriz de Privilegios RBAC</span>
-              <h3 style="font-size:16px;margin:6px 0 8px;">🔐 Permisos por Pantalla</h3>
-              <div style="font-size:12px;display:grid;gap:8px;color:var(--slate-700);">
-                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
-                  <b>🛡️ 1. Administrador:</b> Carga equipos + Gestiona activos + Administra BD Firestore.
-                </div>
-                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
-                  <b>👔 2. Jefe / Gerente Mto:</b> Carga y edita equipos HVAC + Imprime QR + Asigna técnicos + Ve KPIs. <b>(Sin acceso a BD Firestore)</b>.
-                </div>
-                <div style="padding:8px;border:1px solid var(--border);border-radius:8px;">
-                  <b>🧰 3. Técnico de Campo:</b> Escanea QR + Ve Ficha e Historial + Resuelve tickets + Firma preventivos. <b>(No puede cargar equipos ni tocar BD Firestore)</b>.
-                </div>
+              <span class="badge badge-blue">Resumen del Padrón Octubre</span>
+              <h3 style="font-size:16px;margin:6px 0 8px;">📊 Locales por Zona (Hoja Google Sheets)</h3>
+              <div style="font-size:12px;max-height:300px;overflow-y:auto;display:grid;gap:6px;">
+                ${zones.map((z) => {
+                  const countZ = activeStores.filter((s) => Number(s.zona) === z.id).length;
+                  return `<div style="display:flex;justify-content:space-between;padding:6px 8px;border:1px solid var(--border);border-radius:6px;">
+                    <span><b>Zona ${z.id}</b> (${z.region})</span>
+                    <span class="badge badge-blue">${countZ} locales</span>
+                  </div>`;
+                }).join("")}
               </div>
             </div>
           </div>
@@ -1589,7 +2041,7 @@
       }
 
       // --------------------------------------------------------------------------
-      // PESTAÑA 1: ACTIVOS HVAC (CON PERMISOS DIFERENCIADOS)
+      // PESTAÑA ACTIVOS HVAC
       // --------------------------------------------------------------------------
       if (currentTab === "assets") {
         const allIds = JSON.stringify(assets.map((a) => a.id));
@@ -1598,9 +2050,7 @@
             <div>
               <h2 style="font-size:20px;">🏢 Padrón de Aires Acondicionados (HVAC) y Códigos QR</h2>
               <p style="font-size:13px;color:var(--slate-600);">
-                ${profile.canCreateOrEditAssets
-                  ? "Modo Gestión Activo (Admin / Jefe de Mantenimiento): Podés dar de alta equipos nuevos, editar parámetros e imprimir etiquetas QR."
-                  : "Modo Consulta Técnica (Rol Técnico): Podés consultar las fichas técnicas y escanear los códigos QR. El alta de equipos está deshabilitada para tu rol."}
+                Equipos vinculados a los locales reales de la base de Octubre (Nro de Local, Dirección, Localidad y Zona).
               </p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1616,7 +2066,7 @@
           <div class="grid-2-1">
             <div style="display:flex;flex-direction:column;gap:12px;">
               ${assets.map((a) => {
-                const store = stores.find((s) => s.id === a.store_id) || stores[0];
+                const store = findStoreById(a.store_id);
                 const tCount = tickets.filter((t) => t.asset_id === a.id).length;
                 const pCount = preventives.filter((p) => p.asset_id === a.id).length;
                 return `
@@ -1630,10 +2080,10 @@
                           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                             <span class="mono badge badge-blue">${a.tag_code}</span>
                             <span class="badge ${a.status === 'operativo' ? 'badge-green' : 'badge-red'}">${a.status}</span>
-                            <span style="font-size:11px;color:var(--slate-500);">Criticidad: <b>${a.criticality.toUpperCase()}</b></span>
+                            <span class="badge badge-purple">Local N° ${store.nro_local} (Zona ${store.zona})</span>
                           </div>
                           <div style="font-weight:800;font-size:15px;margin-top:4px;">${a.type} • ${a.brand} ${a.model}</div>
-                          <div style="font-size:12px;color:var(--slate-600);">📍 ${store.code} ${store.name} — ${a.location_in_store}</div>
+                          <div style="font-size:12px;color:var(--slate-600);">📍 ${store.direccion} (${store.barrio}, ${store.localidad}) — ${a.location_in_store}</div>
                           <div style="font-size:11px;color:var(--slate-500);margin-top:4px;">
                             🛠️ <b>${tCount}</b> tickets en historial • 📋 <b>${pCount}</b> preventivos firmados
                           </div>
@@ -1662,7 +2112,7 @@
                   <div style="font-size:12px;">
                     <div class="mono" style="font-weight:900;font-size:16px;">${selectedAsset.tag_code}</div>
                     <div style="font-weight:700;">${selectedAsset.brand} ${selectedAsset.model}</div>
-                    <div style="color:var(--slate-600);">${selectedAsset.location_in_store}</div>
+                    <div style="color:var(--slate-600);">Local N° ${findStoreById(selectedAsset.store_id).nro_local} — ${findStoreById(selectedAsset.store_id).direccion}</div>
                     <div class="mono" style="font-size:10px;color:var(--slate-500);margin-top:4px;word-break:break-all;">UUID: ${selectedAsset.qr_code_uuid}</div>
                   </div>
                 </div>
@@ -1670,11 +2120,6 @@
                   <button class="btn btn-dark" onclick="openQrPrintModal([${selectedAsset.id}])">🖨️ Imprimir QR</button>
                   <button class="btn btn-blue" onclick="scanAssetQr(${selectedAsset.id})">📱 Simular Escaneo QR</button>
                 </div>
-                ${profile.canCreateOrEditAssets ? `
-                  <button class="btn btn-purple" style="width:100%;margin-top:8px;" onclick="openEditAssetModal(${selectedAsset.id})">
-                    ✏️ Editar Estado / Ubicación / Criticidad
-                  </button>
-                ` : ""}
               </div>
 
               <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--slate-600);margin-bottom:6px;">
@@ -1691,7 +2136,7 @@
       // PESTAÑA HOJA DE VIDA 360° AL ESCANEAR QR
       // --------------------------------------------------------------------------
       if (currentTab === "asset_360") {
-        const store = stores.find((s) => s.id === selectedAsset.store_id) || stores[0];
+        const store = findStoreById(selectedAsset.store_id);
         const assetTickets = tickets.filter((t) => t.asset_id === selectedAsset.id);
         const assetPreventives = preventives.filter((p) => p.asset_id === selectedAsset.id);
 
@@ -1707,10 +2152,7 @@
                   ${selectedAsset.tag_code} — ${selectedAsset.brand} ${selectedAsset.model}
                 </h2>
                 <p style="font-size:13px;color:#cbd5e1;margin-top:2px;">
-                  📍 <b>${store.code} - ${store.name}</b> • Sector: <b>${selectedAsset.location_in_store}</b> • N/S: <span class="mono">${selectedAsset.serial_number}</span>
-                </p>
-                <p class="mono" style="font-size:11px;color:#93c5fd;margin-top:4px;">
-                  URL del QR: https://cmms.red528.com.ar/?qr=${selectedAsset.qr_code_uuid}
+                  📍 <b>Local N° ${store.nro_local} (${store.direccion}, ${store.localidad} - Zona ${store.zona})</b> • Sector: <b>${selectedAsset.location_in_store}</b>
                 </p>
               </div>
             </div>
@@ -1727,20 +2169,16 @@
           <div class="grid-3">
             <div class="card">
               <h3 style="font-size:15px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
-                1. Datos Técnicos del Equipo
+                1. Datos Técnicos y Ubicación del Local
               </h3>
               <div style="font-size:13px;display:grid;gap:8px;margin-bottom:14px;">
+                <div><b>Nro de Local:</b> Local N° ${store.nro_local} (Zona ${store.zona})</div>
+                <div><b>Dirección:</b> ${store.direccion} (${store.barrio}, ${store.localidad})</div>
                 <div><b>Tipo de Equipo:</b> ${selectedAsset.type}</div>
                 <div><b>Estado Actual:</b> <span class="badge ${selectedAsset.status === 'operativo' ? 'badge-green' : 'badge-red'}">${selectedAsset.status}</span></div>
-                <div><b>Criticidad ISO 55000:</b> ${selectedAsset.criticality.toUpperCase()}</div>
                 <div><b>Capacidad Frigorífica:</b> ${selectedAsset.capacity_kcal_fg} kcal/fg</div>
                 <div><b>Gas Refrigerante:</b> ${selectedAsset.refrigerant_type}</div>
                 <div><b>Alimentación Eléctrica:</b> ${selectedAsset.power_supply}</div>
-                <div><b>Fecha Instalación:</b> ${selectedAsset.installation_date}</div>
-                <div><b>Vencimiento Garantía:</b> ${selectedAsset.warranty_expiration}</div>
-              </div>
-              <div style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;margin-bottom:6px;">
-                Atributos Extendidos (JSONB technical_specs)
               </div>
               <pre class="json-box mono">${JSON.stringify(selectedAsset.technical_specs, null, 2)}</pre>
             </div>
@@ -1788,7 +2226,7 @@
       }
 
       // --------------------------------------------------------------------------
-      // PESTAÑA 2: SOLICITUDES / TICKETS
+      // PESTAÑA TICKETS
       // --------------------------------------------------------------------------
       if (currentTab === "tickets") {
         container.innerHTML = `
@@ -1797,13 +2235,14 @@
               <h2 style="font-size:19px;">🛠️ Bandeja de Solicitudes de Mantenimiento (${tickets.length})</h2>
               ${tickets.map((t) => {
                 const asset = assets.find((a) => a.id === t.asset_id) || assets[0];
+                const store = findStoreById(t.store_id);
                 return `
                   <div class="card">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
                       <div>
                         <span class="mono badge badge-blue">${t.ticket_number}</span>
                         <span class="badge ${t.status === 'resuelto' ? 'badge-green' : 'badge-amber'}">${t.status}</span>
-                        <span class="badge ${t.priority === 'critica' ? 'badge-red' : 'badge-blue'}">Prioridad: ${t.priority}</span>
+                        <span class="badge badge-purple">Local N° ${store.nro_local} (${store.direccion}, Zona ${store.zona})</span>
                       </div>
                       <button class="btn btn-outline" onclick="scanAssetQr(${asset.id})">🔍 Ver Equipo ${asset.tag_code}</button>
                     </div>
@@ -1815,8 +2254,9 @@
                         ${profile.canAssignTechnicians && t.status !== "resuelto" ? `
                           <select style="width:auto;padding:4px 8px;margin-left:6px;font-size:11px;" onchange="assignTechnicianToTicket(${t.id}, this.value)">
                             <option value="">Reasignar técnico...</option>
-                            <option value="Carlos Rodríguez">Carlos Rodríguez (ClimaService)</option>
-                            <option value="Hernán Pereyra">Hernán Pereyra (FríoSur)</option>
+                            <option value="Carlos Rodríguez">Carlos Rodríguez</option>
+                            <option value="Ignacio Portillo">Ignacio Portillo</option>
+                            <option value="Gabriel Amaya">Gabriel Amaya</option>
                           </select>
                         ` : ""}
                       </div>
@@ -1838,7 +2278,7 @@
                 <div>
                   <label>Equipo de Aire Acondicionado</label>
                   <select id="tk_asset" class="input">
-                    ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — ${a.brand} ${a.model}</option>`).join("")}
+                    ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — Local N° ${a.store_id} (${a.brand})</option>`).join("")}
                   </select>
                 </div>
                 <div>
@@ -1872,7 +2312,7 @@
       }
 
       // --------------------------------------------------------------------------
-      // PESTAÑA 3: CHECKLISTS PREVENTIVOS Y FIRMA
+      // PESTAÑA PREVENTIVOS
       // --------------------------------------------------------------------------
       if (currentTab === "preventive") {
         container.innerHTML = `
@@ -1883,7 +2323,7 @@
               <div>
                 <label>Equipo HVAC Objetivo</label>
                 <select id="pv_asset" class="input">
-                  ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — ${a.brand} ${a.model}</option>`).join("")}
+                  ${assets.map((a) => `<option value="${a.id}" ${a.id === selectedAsset.id ? 'selected' : ''}>${a.tag_code} — Local N° ${a.store_id} (${a.brand})</option>`).join("")}
                 </select>
               </div>
               <div>
@@ -1903,8 +2343,8 @@
                 <textarea id="pv_obs" rows="2" class="input" placeholder="Filtros G4 limpios, bandeja de condensado desobstruida..."></textarea>
               </div>
               <div style="grid-column:1 / -1;">
-                <label>Firma de Conformidad (Encargado de Local)</label>
-                <input id="pv_sig" class="input" value="Firmado en conformidad — Sofía Peralta (Encargada Local)" />
+                <label>Firma de Conformidad (Jefe de Tienda)</label>
+                <input id="pv_sig" class="input" value="Firmado en conformidad — Jefe de Tienda" />
               </div>
             </div>
             <button type="submit" class="btn btn-green" style="width:100%;padding:11px;">✍️ Firmar y Guardar en Historial del Equipo</button>
@@ -1914,28 +2354,30 @@
       }
 
       // --------------------------------------------------------------------------
-      // PESTAÑA 4: KPIs OPERATIVOS (ADMIN Y JEFE DE MANTENIMIENTO)
+      // PESTAÑA KPIs
       // --------------------------------------------------------------------------
       if (currentTab === "kpis") {
         container.innerHTML = `
           <div class="grid-4" style="margin-bottom:20px;">
+            <div class="card"><b>Locales Activos Octubre:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">${activeStores.length}</div></div>
             <div class="card"><b>MTTR Promedio:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">3.75 hs</div></div>
             <div class="card"><b>MTBF Parque HVAC:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">958.4 hs</div></div>
-            <div class="card"><b>Disponibilidad Técnica:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">94.8%</div></div>
             <div class="card"><b>Cumplimiento SLA:</b><div style="font-size:26px;font-weight:900;margin-top:4px;">92.4%</div></div>
           </div>
           <div class="card">
-            <h3 style="font-size:16px;margin-bottom:10px;">Distribución de los 528 Locales por Región</h3>
-            <p style="font-size:13px;color:var(--slate-600);">• <b>CABA:</b> 168 locales (Zonas 1 y 2) — SLA 94.2%</p>
-            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>GBA:</b> 210 locales (Zonas 3, 4 y 5) — SLA 91.8%</p>
-            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>Interior:</b> 150 locales (Zonas 6, 7 y 8) — SLA 89.5%</p>
+            <h3 style="font-size:16px;margin-bottom:10px;">Distribución Real de los ${activeStores.length} Locales por Localidad (Hoja Octubre)</h3>
+            <p style="font-size:13px;color:var(--slate-600);">• <b>CABA (Zonas 4 a 14 y 16):</b> ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'CABA').length} locales</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>GBA (Zonas 1, 2 y 3):</b> ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'GBA').length} locales</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>CÓRDOBA (Zonas 15, 18 y 20):</b> ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'CORDOBA').length} locales</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>MENDOZA (Zona 17):</b> ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'MENDOZA').length} locales</p>
+            <p style="font-size:13px;color:var(--slate-600);margin-top:4px;">• <b>SALTA (Zona 19):</b> ${activeStores.filter((s) => String(s.localidad).toUpperCase() === 'SALTA').length} locales</p>
           </div>
         `;
         return;
       }
 
       // --------------------------------------------------------------------------
-      // PESTAÑA 5: APP MÓVIL OFFLINE + ESCÁNER QR
+      // PESTAÑA APP MÓVIL
       // --------------------------------------------------------------------------
       if (currentTab === "mobile") {
         container.innerHTML = `
@@ -1954,7 +2396,7 @@
                     ${assets.map((a) => `
                       <button class="btn btn-outline" style="justify-content:space-between;padding:10px;" onclick="scanAssetQr(${a.id})">
                         <span class="mono" style="color:var(--blue-700);font-weight:800;">📷 ${a.tag_code}</span>
-                        <span>${a.brand} →</span>
+                        <span>Local ${a.store_id} →</span>
                       </button>
                     `).join("")}
                   </div>
