@@ -428,16 +428,37 @@
     .stores-desktop-table { display: block; }
     .stores-mobile-cards { display: none; }
 
-      /* Modales a pantalla completa */
-      .modal-backdrop { padding: 0; align-items: flex-end; }
-      .modal { max-height: 94vh; border-radius: 18px 18px 0 0; padding: 16px; }
-
-      /* Aviso flotante por encima de la barra inferior */
-      .toast { left: 10px; right: 10px; bottom: 84px; font-size: 12px; }
-
-      /* El simulador de celular no hace falta dentro de un celular */
-      .phone-frame { padding: 0; background: transparent; box-shadow: none; border-radius: 0; max-width: 100%; }
-      .phone-screen { border-radius: 14px; min-height: auto; }
+    /* PANTALLA INICIAL DE INGRESO DE USUARIO (LOGIN) */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: radial-gradient(circle at top right, #1e3a8a 0%, #0f172a 55%, #020617 100%);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .login-card {
+      background: #ffffff;
+      color: var(--slate-900);
+      border-radius: 20px;
+      max-width: 880px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 24px;
+    }
+    @media (max-width: 760px) {
+      .login-card {
+        grid-template-columns: 1fr;
+        padding: 18px;
+        gap: 18px;
+      }
     }
   </style>
   <!-- Carga de la Base Oficial de 528 Locales de Octubre desde Google Sheets -->
@@ -445,6 +466,101 @@
 </head>
 <body>
   <div id="toast" class="toast"></div>
+
+  <!-- =========================================================================
+       PANTALLA INICIAL DE INGRESO DE USUARIO (LOGIN POR ROL Y CREDENCIALES)
+       ========================================================================= -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <!-- Columna Izquierda: Formulario de Ingreso con Usuario y Contraseña -->
+      <div style="display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid var(--border);padding-right:20px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div class="brand-icon">❄️</div>
+            <div>
+              <strong style="font-size:17px;display:block;">Fracttal-AR CMMS / GMAO</strong>
+              <span class="badge badge-blue">Red 528 Locales • Octubre</span>
+            </div>
+          </div>
+          <h2 style="font-size:21px;font-weight:800;margin-bottom:6px;">🔐 Ingreso de Usuario</h2>
+          <p style="font-size:12px;color:var(--slate-600);margin-bottom:16px;">
+            Ingresá con tu correo corporativo o seleccioná un perfil a la derecha para abrir la pantalla con sus privilegios correspondientes.
+          </p>
+
+          <form onsubmit="handleUserLogin(event)" style="display:grid;gap:12px;">
+            <div>
+              <label>Seleccionar Usuario Registrado (o escribir email)</label>
+              <select id="login_user_preset" class="input" onchange="applyLoginPreset(this.value)">
+                <option value="admin|Ing. Martín Echeverría|mecheverria@redretail.com.ar">🛡️ Ing. Martín Echeverría — Administrador General</option>
+                <option value="jefe_mantenimiento|Matías Dávalos (Jefe Mto Zona 1)|matias.davalos@redretail.com.ar">👔 Matías Dávalos — Jefe de Mantenimiento (Zona 1)</option>
+                <option value="jefe_mantenimiento|Gonzalo Mena (Jefe Mto Zona 2)|gonzalo.mena@redretail.com.ar">👔 Gonzalo Mena — Jefe de Mantenimiento (Zona 2)</option>
+                <option value="jefe_mantenimiento|Ing. Laura Gómez (Gerente Mto)|lgomez@redretail.com.ar">👔 Ing. Laura Gómez — Gerente de Mantenimiento</option>
+                <option value="tecnico|Ignacio Portillo (Técnico HVAC)|ignacio.portillo@clima-service.com.ar">🧰 Ignacio Portillo — Técnico de Mantenimiento</option>
+                <option value="tecnico|Gabriel Amaya (Técnico HVAC)|gabriel.amaya@clima-service.com.ar">🧰 Gabriel Amaya — Técnico de Mantenimiento</option>
+                <option value="tecnico|Ezequiel Mora (Técnico HVAC)|ezequiel.mora@clima-service.com.ar">🧰 Ezequiel Mora — Técnico de Mantenimiento</option>
+                <option value="tecnico|Carlos Rodríguez (Técnico HVAC)|crodriguez@clima-service.com.ar">🧰 Carlos Rodríguez — Técnico de Campo</option>
+              </select>
+            </div>
+            <div>
+              <label>Correo Electrónico / Usuario</label>
+              <input id="login_email" type="email" class="input mono" value="mecheverria@redretail.com.ar" required />
+            </div>
+            <div>
+              <label>Contraseña</label>
+              <input id="login_password" type="password" class="input mono" value="cmms2026" required />
+            </div>
+            <button type="submit" class="btn btn-blue" style="padding:12px;font-size:14px;width:100%;">
+              🚀 Iniciar Sesión e Ingresar al Sistema →
+            </button>
+          </form>
+        </div>
+
+        <div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--border);font-size:11px;color:var(--slate-500);">
+          🔥 Conectado a Firebase Cloud Firestore: <b class="mono">cmms-red-express-locales</b>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Acceso Directo en 1 Clic a las 3 Pantallas -->
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:10px;">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--slate-500);margin-bottom:2px;">
+          ⚡ Acceso Rápido en 1 Clic (Seleccioná tu Pantalla):
+        </div>
+
+        <div class="card card-interactive" style="border-left:4px solid #2563eb;padding:14px;" onclick="quickLoginAs('admin', 'Ing. Martín Echeverría', 'mecheverria@redretail.com.ar')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge badge-blue">1. Pantalla Administrador</span>
+            <span style="font-size:12px;font-weight:800;color:var(--blue-600);">Ingresar →</span>
+          </div>
+          <div style="font-weight:800;font-size:14px;margin-top:4px;">🛡️ Administrador General</div>
+          <p style="font-size:11px;color:var(--slate-600);margin-top:2px;">
+            ✅ Suma/cierra locales • ✅ Carga equipos y QR • ✅ <b>Único con acceso a modificar BD Firestore</b>.
+          </p>
+        </div>
+
+        <div class="card card-interactive" style="border-left:4px solid #7c3aed;padding:14px;" onclick="quickLoginAs('jefe_mantenimiento', 'Matías Dávalos / Ing. Laura Gómez', 'lgomez@redretail.com.ar')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge badge-purple">2. Pantalla Jefe / Gerente Mto.</span>
+            <span style="font-size:12px;font-weight:800;color:var(--purple-600);">Ingresar →</span>
+          </div>
+          <div style="font-weight:800;font-size:14px;margin-top:4px;">👔 Jefe / Gerente de Mantenimiento</div>
+          <p style="font-size:11px;color:var(--slate-600);margin-top:2px;">
+            ✅ Suma/cierra locales • ✅ Carga y edita activos HVAC + QR • 🔒 <b>Sin acceso a BD Firestore</b>.
+          </p>
+        </div>
+
+        <div class="card card-interactive" style="border-left:4px solid #059669;padding:14px;" onclick="quickLoginAs('tecnico', 'Ignacio Portillo / Carlos Rodríguez', 'crodriguez@clima-service.com.ar')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge badge-green">3. Pantalla Técnico de Campo</span>
+            <span style="font-size:12px;font-weight:800;color:var(--emerald-600);">Ingresar →</span>
+          </div>
+          <div style="font-weight:800;font-size:14px;margin-top:4px;">🧰 Técnico de Mantenimiento HVAC</div>
+          <p style="font-size:11px;color:var(--slate-600);margin-top:2px;">
+            ✅ Escanea QR y Hoja de Vida 360° • ✅ Resuelve tickets y firma preventivos • 🔒 <b>No carga equipos</b>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <header>
     <div class="role-switcher-bar">
@@ -1134,6 +1250,11 @@
           </button>
         `;
       }
+      actionsHtml += `
+        <button class="btn btn-outline" style="background:#0f172a;color:#f8fafc;border-color:#475569;" onclick="openLoginScreen()">
+          🚪 Cambiar Usuario / Salir
+        </button>
+      `;
       topActions.innerHTML = actionsHtml;
 
       const tabs = [
@@ -2592,17 +2713,71 @@
       }
     }
 
+    // ============================================================================
+    // PANTALLA INICIAL DE LOGIN / INGRESO DE USUARIO
+    // ============================================================================
+    function openLoginScreen() {
+      const overlay = document.getElementById("loginOverlay");
+      if (overlay) overlay.style.display = "flex";
+    }
+
+    function closeLoginScreen() {
+      const overlay = document.getElementById("loginOverlay");
+      if (overlay) overlay.style.display = "none";
+    }
+
+    function applyLoginPreset(val) {
+      if (!val) return;
+      const parts = val.split("|");
+      const emailEl = document.getElementById("login_email");
+      if (emailEl && parts[2]) emailEl.value = parts[2];
+    }
+
+    function quickLoginAs(role, userName, userEmail) {
+      if (!ROLE_PROFILES[role]) return;
+      if (userName) ROLE_PROFILES[role].userName = userName;
+      if (userEmail) ROLE_PROFILES[role].userEmail = userEmail;
+      currentTab = "home";
+      closeLoginScreen();
+      switchRole(role);
+    }
+
+    function handleUserLogin(e) {
+      e.preventDefault();
+      const presetVal = document.getElementById("login_user_preset").value;
+      const emailInput = document.getElementById("login_email").value.trim().toLowerCase();
+      let role = "admin";
+      let userName = "Ing. Martín Echeverría";
+
+      if (emailInput.includes("tecnico") || emailInput.includes("portillo") || emailInput.includes("amaya") || emailInput.includes("mora") || emailInput.includes("rodriguez") || emailInput.includes("clima-service")) {
+        role = "tecnico";
+        userName = presetVal.startsWith("tecnico|") ? presetVal.split("|")[1] : "Técnico HVAC (" + emailInput + ")";
+      } else if (emailInput.includes("jefe") || emailInput.includes("davalos") || emailInput.includes("mena") || emailInput.includes("lgomez")) {
+        role = "jefe_mantenimiento";
+        userName = presetVal.startsWith("jefe_mantenimiento|") ? presetVal.split("|")[1] : "Jefe de Mantenimiento (" + emailInput + ")";
+      } else if (presetVal) {
+        const parts = presetVal.split("|");
+        if (parts[0] && ROLE_PROFILES[parts[0]] && parts[2].toLowerCase() === emailInput) {
+          role = parts[0];
+          userName = parts[1];
+        }
+      }
+
+      quickLoginAs(role, userName, emailInput);
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get("role");
+      const tabParam = params.get("tab");
+      const qr = params.get("qr");
+
       if (roleParam && ROLE_PROFILES[roleParam]) {
         currentRole = roleParam;
       }
-      const tabParam = params.get("tab");
       if (tabParam) {
         currentTab = tabParam;
       }
-      const qr = params.get("qr");
       if (qr) {
         const found = assets.find((a) => a.qr_code_uuid.toLowerCase() === qr.toLowerCase() || a.tag_code.toLowerCase() === qr.toLowerCase());
         if (found) {
@@ -2610,6 +2785,12 @@
           currentTab = "asset_360";
         }
       }
+
+      // Si se abre index.html sin parámetros (?role= o ?qr=), mostrar la Pantalla Inicial de Ingreso de Usuario (Login)
+      if (!roleParam && !qr && !tabParam) {
+        openLoginScreen();
+      }
+
       switchRole(currentRole);
       loadFromCloudFirestore();
     });
