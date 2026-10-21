@@ -162,8 +162,8 @@
       border-bottom-color: #3b82f6;
     }
     main { padding: 20px 0 48px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr)); gap: 18px; }
     .grid-2-1 { display: grid; grid-template-columns: 1.85fr 1.15fr; gap: 20px; }
     @media (max-width: 920px) { .grid-2-1 { grid-template-columns: 1fr; } }
     .card {
@@ -326,6 +326,119 @@
       flex-direction: column;
       justify-content: space-between;
     }
+    .role-select-mobile { display: none; }
+
+    /* ======================================================================
+       OPTIMIZACIÓN PARA CELULARES (pantallas de hasta 640 px)
+       ====================================================================== */
+    @media (max-width: 640px) {
+      html, body { overflow-x: hidden; }
+      body { font-size: 14px; overflow-wrap: anywhere; }
+      .container { padding: 0 10px; }
+
+      /* Selector de rol compacto (desplegable en lugar de 3 botones grandes) */
+      .role-switcher-bar { padding: 6px 0; }
+      .role-pills, #cloudSyncIndicator, .role-switcher-label { display: none !important; }
+      .role-select-mobile {
+        display: block;
+        width: 100%;
+        background: #0f172a;
+        color: #fff;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      /* Cabecera compacta */
+      .topbar { padding: 8px 0; gap: 8px; }
+      .brand-icon { width: 34px; height: 34px; font-size: 17px; }
+      .brand strong { font-size: 15px !important; }
+      #roleHeaderSubtitle { display: none; }
+      #topActionButtons { width: 100%; display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px !important; }
+      #topActionButtons .btn { font-size: 11px; padding: 9px 4px; text-align: center; white-space: nowrap; }
+      #topActionButtons .btn:first-child { grid-column: 1 / -1; }
+
+      /* Pestañas como barra de navegación inferior (estilo app) */
+      .nav-tabs {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 60;
+        background: #0f172a;
+        border-top: 1px solid #334155;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+        gap: 4px;
+        box-shadow: 0 -6px 18px rgba(0,0,0,0.25);
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tab-btn {
+        font-size: 11px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border-bottom: none;
+        flex: 0 0 auto;
+      }
+      .tab-btn.active { background: #1e3a8a; color: #fff; }
+      main { padding: 10px 0 96px; }
+
+      /* Banner de privilegios resumido */
+      .privilege-banner { padding: 8px 10px; font-size: 11px; margin-bottom: 12px; }
+      .privilege-banner > div:first-child { display: none; }
+
+      /* Grillas en una sola columna */
+      .grid-2-1, .grid-3 { grid-template-columns: 1fr !important; gap: 12px; }
+      .grid-4 { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+      [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+      .card { padding: 14px; border-radius: 12px; }
+
+      /* Portada (hero) */
+      .hero { padding: 16px; border-radius: 14px; gap: 12px; }
+      .hero h2 { font-size: 18px !important; line-height: 1.3; }
+      .hero p { font-size: 12px !important; }
+      .hero > div:last-child { width: 100%; display: grid !important; grid-template-columns: 1fr; gap: 8px !important; }
+      .hero .btn { width: 100%; padding: 11px; }
+
+      /* Botones táctiles más grandes */
+      .btn { min-height: 38px; }
+      .input, select, textarea { font-size: 15px; padding: 10px; }
+
+      /* Tarjetas de equipos */
+      .card-interactive > div { flex-direction: column; align-items: stretch !important; }
+      .card-interactive > div > div:last-child { flex-direction: row !important; flex-wrap: wrap; }
+      .card-interactive > div > div:last-child .btn { flex: 1 1 140px; }
+
+      /* Dual display para lista de locales */
+      .stores-desktop-table { display: none !important; }
+      .stores-mobile-cards { display: flex !important; flex-direction: column; gap: 10px; }
+
+      /* Modales a pantalla completa */
+      .modal-backdrop { padding: 0; align-items: flex-end; }
+      .modal { max-height: 94vh; border-radius: 18px 18px 0 0; padding: 16px; }
+
+      /* Aviso flotante por encima de la barra inferior */
+      .toast { left: 10px; right: 10px; bottom: 84px; font-size: 12px; }
+
+      /* El simulador de celular no hace falta dentro de un celular */
+      .phone-frame { padding: 0; background: transparent; box-shadow: none; border-radius: 0; max-width: 100%; }
+      .phone-screen { border-radius: 14px; min-height: auto; }
+    }
+    .stores-desktop-table { display: block; }
+    .stores-mobile-cards { display: none; }
+
+      /* Modales a pantalla completa */
+      .modal-backdrop { padding: 0; align-items: flex-end; }
+      .modal { max-height: 94vh; border-radius: 18px 18px 0 0; padding: 16px; }
+
+      /* Aviso flotante por encima de la barra inferior */
+      .toast { left: 10px; right: 10px; bottom: 84px; font-size: 12px; }
+
+      /* El simulador de celular no hace falta dentro de un celular */
+      .phone-frame { padding: 0; background: transparent; box-shadow: none; border-radius: 0; max-width: 100%; }
+      .phone-screen { border-radius: 14px; min-height: auto; }
+    }
   </style>
   <!-- Carga de la Base Oficial de 528 Locales de Octubre desde Google Sheets -->
   <script src="locales-data.js"></script>
@@ -336,7 +449,12 @@
   <header>
     <div class="role-switcher-bar">
       <div class="container role-switcher-inner">
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1;">
+        <select id="roleSelectMobile" class="role-select-mobile" onchange="switchRole(this.value)">
+          <option value="admin">🛡️ Pantalla Administrador</option>
+          <option value="jefe_mantenimiento">👔 Pantalla Jefe de Mantenimiento</option>
+          <option value="tecnico">🧰 Pantalla Técnico de Campo</option>
+        </select>
+        <div class="role-switcher-label" style="display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1;">
           <span>🔐 <b>Cambiar Pantalla / Perfil de Usuario (RBAC):</b></span>
           <span id="cloudSyncIndicator" class="mono" style="font-size:11px;color:#38bdf8;">• Conectado a Firestore: cmms-red-express-locales</span>
         </div>
@@ -968,6 +1086,8 @@
 
       updateHeaderAndTabs();
       render();
+      const mobileSel = document.getElementById("roleSelectMobile");
+      if (mobileSel) mobileSel.value = currentRole;
       showToast(`Pantalla cambiada a: ${profile.title} (${profile.userName})`);
     }
 
@@ -1598,7 +1718,24 @@
     // ============================================================================
     // RENDERIZADO DINÁMICO SEGÚN LA PANTALLA / ROL ACTIVO
     // ============================================================================
+    // Etiqueta cada celda con el título de su columna (en celular la tabla se ve como tarjetas)
+    function applyTableLabels() {
+      document.querySelectorAll(".table-wrap table").forEach((table) => {
+        const headers = Array.from(table.querySelectorAll("thead th")).map((th) => th.textContent.trim());
+        table.querySelectorAll("tbody tr").forEach((tr) => {
+          Array.from(tr.children).forEach((td, i) => {
+            if (headers[i]) td.setAttribute("data-label", headers[i]);
+          });
+        });
+      });
+    }
+
     function render() {
+      renderInner();
+      applyTableLabels();
+    }
+
+    function renderInner() {
       const container = document.getElementById("appContent");
       const profile = ROLE_PROFILES[currentRole];
       const selectedAsset = assets.find((a) => a.id === selectedAssetId) || assets[0];
@@ -1717,7 +1854,8 @@
             </div>
           </div>
 
-          <div class="table-wrap">
+          <!-- LISTADO DE LOCALES: VERSIÓN ESCRITORIO (TABLA) -->
+          <div class="table-wrap stores-desktop-table">
             <table>
               <thead>
                 <tr>
@@ -1778,6 +1916,49 @@
                 }).join("")}
               </tbody>
             </table>
+          </div>
+
+          <!-- LISTADO DE LOCALES: VERSIÓN CELULAR (TARJETAS NATIVAS) -->
+          <div class="stores-mobile-cards">
+            ${visibleStores.length === 0 ? `
+              <div class="card" style="text-align:center;padding:24px;color:var(--slate-500);">No se encontraron locales.</div>
+            ` : visibleStores.map((s) => {
+              const storeAssetsCount = assets.filter((a) => Number(a.store_id) === Number(s.id)).length;
+              const isClosed = s.is_active === false;
+              return `
+                <div class="card" style="padding:14px;border-left:4px solid ${isClosed ? '#ef4444' : '#2563eb'};">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="display:flex;gap:6px;align-items:center;">
+                      <span class="mono badge ${isClosed ? 'badge-red' : 'badge-blue'}" style="font-size:13px;font-weight:900;">N° ${s.nro_local}</span>
+                      <span class="badge badge-purple">${s.localidad}</span>
+                      <span class="badge" style="background:#f1f5f9;color:var(--slate-700);">Zona ${s.zona}</span>
+                    </div>
+                    <span class="badge ${isClosed ? 'badge-red' : 'badge-green'}">${isClosed ? 'CERRADO' : 'ABIERTO'}</span>
+                  </div>
+                  <div style="font-weight:800;font-size:14px;color:var(--slate-900);line-height:1.3;">
+                    ${s.direccion || s.address}
+                  </div>
+                  <div style="font-size:12px;color:var(--slate-600);margin:4px 0 10px;">
+                    📍 ${s.barrio ? s.barrio + ' • ' : ''}${s.city || s.localidad} ${s.cod_postal ? '(CP: ' + s.cod_postal + ')' : ''}
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border);margin-top:4px;">
+                    <span class="badge ${storeAssetsCount > 0 ? 'badge-green' : 'badge-amber'}" style="font-size:11px;">
+                      ${storeAssetsCount} aire(s)
+                    </span>
+                    <div style="display:flex;gap:6px;">
+                      ${profile.canCreateOrEditAssets ? (
+                        !isClosed ? `
+                          <button class="btn btn-blue" style="padding:6px 10px;font-size:11px;" onclick="openNewAssetModal(${s.id})">+ Equipo HVAC</button>
+                          <button class="btn btn-red" style="padding:6px 10px;font-size:11px;" onclick="closeStoreByClosure('${s.nro_local}')">🚫 Cierre</button>
+                        ` : `
+                          <button class="btn btn-green" style="padding:6px 10px;font-size:11px;" onclick="reactivateStore('${s.nro_local}')">🔄 Reactivar</button>
+                        `
+                      ) : `<span style="font-size:11px;color:var(--slate-500);">Solo lectura</span>`}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
           </div>
 
           ${filteredStores.length > visibleStores.length ? `
@@ -2416,6 +2597,10 @@
       const roleParam = params.get("role");
       if (roleParam && ROLE_PROFILES[roleParam]) {
         currentRole = roleParam;
+      }
+      const tabParam = params.get("tab");
+      if (tabParam) {
+        currentTab = tabParam;
       }
       const qr = params.get("qr");
       if (qr) {
